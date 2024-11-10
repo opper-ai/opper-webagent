@@ -66,6 +66,7 @@ def decide_next_action(subgoal, current_url, trajectory, current_view):
 
     Important:  
     * Think hard about the page you are looking at. It has the truth of the current state and always trust this before other things.
+    * You might be using a stored session, so you might have cookies from previous sessions loaded.
     * Only provide one next action, never propose multiple actions at once or jump to far ahead. Take your time to do things right.
     * Use the navigate action to set a url.
     * Always use click action to perform navigations and put focus on input fields etc. For click action make sure to clearly provide details on what to click on as it is displayed on the page, such as the name of a button or label.

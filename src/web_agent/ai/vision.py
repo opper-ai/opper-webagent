@@ -7,6 +7,7 @@ import logging
 opper = Opper()
 
 def find_coordinates(image_path: str, input: str, debug: bool = False):
+
     f = opper.functions.create(
         model="opper/molmo-7b-d-0924",
         instructions="given a screenshot, find the coordinates of the object in question",

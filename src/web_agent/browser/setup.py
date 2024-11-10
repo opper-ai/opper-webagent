@@ -31,13 +31,4 @@ def setup_browser(session_dir="./browser_data"):
     page.on('close', save_storage)
     page.on('framenavigated', save_storage)
     
-    def handle_exit(signum, frame):
-        save_storage()
-        browser.close()
-        playwright.stop()
-        print("Browser closed gracefully.")
-        exit(0)
-    
-    signal.signal(signal.SIGINT, handle_exit)
-    
     return playwright, browser, page
