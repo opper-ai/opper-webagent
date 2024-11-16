@@ -41,7 +41,9 @@ The agent can perform these actions:
 
 ### Usage
 
-To use the navigation agent:
+There are two ways to use the navigation agent:
+
+#### 1. Command Line Script
 
 1. Install dependencies:
    ```bash
@@ -52,18 +54,39 @@ To use the navigation agent:
    python src/web_agent/main.py "Your goal here"
    ```
 
+#### 2. Web Service
+
+1. Start the web service:
+   ```bash
+   python src/web_agent/service.py
+   ```
+2. Send requests to the service endpoints:
+   - POST `/navigate` with a JSON body containing:
+     ```json
+     {
+       "goal": "Your goal here",
+       "secrets": "optional login credentials"
+     }
+     ```
+
 ### Example
 
 To navigate to a website and log in:
 
-1. Set your goal:
+1. Using the command line:
    ```bash
    python src/web_agent/main.py "Log in to example.com"
    ```
-
-2. Optionally, provide login details:
+   With credentials:
    ```bash
    python src/web_agent/main.py "Log in to example.com" --secrets "username: your_username, password: your_password"
+   ```
+
+2. Using the web service:
+   ```bash
+   curl -X POST http://localhost:8000/navigate \
+     -H "Content-Type: application/json" \
+     -d '{"goal": "Log in to example.com", "secrets": "username: your_username, password: your_password"}'
    ```
 
 ### Configuration
@@ -92,5 +115,3 @@ Contributions are welcome! Please submit a pull request or open an issue to disc
 ### License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
-
-

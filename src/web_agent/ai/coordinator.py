@@ -1,6 +1,6 @@
 from opperai import Opper
 from opperai.types import CallConfiguration, ImageInput
-from models.schemas import Decision, Action, ScreenOutput
+from web_agent.models import Action, Decision, ActionResult, ScreenOutput, RelevantInteraction
 import logging
 
 opper = Opper()
@@ -63,15 +63,15 @@ def decide_next_action(subgoal, current_url, trajectory, current_view):
     Your task is to decide the next step to take on the page. 
     
     Your main source of input to the next action is a visual interpretation in `current_page` - use this as the main source of information when deciding the next action to take.
-
+    
     Important:  
     * Think hard about the page you are looking at. It has the truth of the current state and always trust this before other things.
     * You might be using a stored session, so you might have cookies from previous sessions loaded.
     * Only provide one next action, never propose multiple actions at once or jump to far ahead. Take your time to do things right.
     * Use the navigate action to set a url.
-    * Always use click action to perform navigations and put focus on input fields etc. For click action make sure to clearly provide details on what to click on as it is displayed on the page, such as the name of a button or label.
+    * Always use click action to perform navigations and put focus on input fields etc. Choose a param that clearly explains what to click on such as the current field value.
     * Before using an action `type` always make sure you have clicked on the field where you want to type. Don't assume you have clicked unless it is in your trajectory of past actions. Important!
-    * The type action always follows with an automatic tab and enter press. 
+    * The type action always follows with an automatic tab and enter press.
     * Use scroll_down or scroll_up actions to navigate vertically on the page. Scroll down is useful for seeing more results, scroll up for seeing filters etc.
     * You can extract text content of the page with the look action.
     * When you have the answer or have met the goal use the finish action. Add all details to the param action.

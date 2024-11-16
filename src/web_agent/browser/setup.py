@@ -3,7 +3,7 @@ from .interaction import set_page_zoom
 import os
 import signal
 
-def setup_browser(session_dir="./browser_data"):
+def setup_browser(session_dir="./browser_data", headless=False):
     """Set up and configure the browser instance with persistence"""
     # Create session directory if it doesn't exist
     os.makedirs(session_dir, exist_ok=True)
@@ -11,10 +11,10 @@ def setup_browser(session_dir="./browser_data"):
 
     playwright = sync_playwright().start()
     browser = playwright.chromium.launch(
-        headless=False, 
+        headless=headless, 
         args=['--enable-automation', '--show-debug-info']
     )
-    
+   
     # Create context with storage state if it exists
     context_params = {}
     if os.path.exists(storage_file):
@@ -22,7 +22,9 @@ def setup_browser(session_dir="./browser_data"):
     
     context = browser.new_context(**context_params)
     page = context.new_page()
+
     set_page_zoom(page, 1)
+    return playwright, browser, page
     
     # Save storage state on page navigation and close
     def save_storage():
