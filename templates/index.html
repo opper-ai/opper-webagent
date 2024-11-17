@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task execution by agents</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            margin-bottom: 20px;
+        }
+        textarea, input {
+            width: 100%;
+            margin: 10px 0;
+            padding: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #activeJobs, #pastJobs, #result {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        .job-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <h1>Web Navigation Agent</h1>
+    
+    <div class="container">
+        <h2>Start New Task</h2>
+        <textarea id="goal" rows="3" placeholder="Enter your navigation goal"></textarea>
+        <textarea id="secrets" rows="3" placeholder="Enter secrets (optional)"></textarea>
+        <button onclick="startNavigation()">Start Navigation</button>
+    </div>
+
+    <div class="container">
+        <h2>Active Tasks</h2>
+        <button onclick="refreshJobs()">Refresh Jobs List</button>
+        <div id="activeJobs"></div>
+    </div>
+
+    <div class="container">
+        <h2>Past Tasks</h2>
+        <div id="pastJobs"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:10000';
+        
+        async function startNavigation() {
+            const goal = document.getElementById('goal').value;
+            const secrets = document.getElementById('secrets').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/navigate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ goal, secrets }),
+                });
+                const data = await response.json();
+                alert(`Navigation job started! Job ID: ${data.job_id}`);
+                refreshJobs();
+            } catch (error) {
+                alert('Error starting navigation: ' + error);
+            }
+        }
+
+        async function refreshJobs() {
+            try {
+                // Get all jobs
+                const response = await fetch(`${API_BASE}/jobs`);
+                const data = await response.json();
+                
+                // Split jobs into active and completed
+                const activeJobs = data.jobs.filter(job => job.status === 'working' || job.status === 'running');
+                const pastJobs = data.jobs.filter(job => job.status === 'completed' || job.status === 'failed');
+                // Log all jobs to console
+                console.log('All jobs:', data.jobs);
+                // Update active jobs display
+                const activeJobsList = document.getElementById('activeJobs');
+                activeJobsList.innerHTML = activeJobs.map(job => `
+                    <div class="job-item">
+                        <strong>Job ID:</strong> ${job.job_id}<br>
+                        <strong>Status:</strong> ${job.status}<br>
+                        <strong>Goal:</strong> ${job.goal}<br>
+                        <strong>Duration:</strong> ${job.duration.toFixed(2)}s<br>
+                    </div>
+                `).join('') || '<p>No active jobs</p>';
+
+                // Update past jobs display
+                const pastJobsList = document.getElementById('pastJobs');
+                pastJobsList.innerHTML = pastJobs.map(job => `
+                    <div class="job-item">
+                        <strong>Job ID:</strong> ${job.job_id}<br>
+                        <strong>Status:</strong> ${job.status}<br>
+                        <strong>Goal:</strong> ${job.goal}<br>
+                        <strong>Duration:</strong> ${job.duration.toFixed(2)}s<br>
+                        ${job.result ? `<strong>Result:</strong> <pre>${JSON.stringify(job.result, null, 2)}</pre>` : ''}
+                        ${job.error ? `<strong>Error:</strong> ${job.error}` : ''}
+                    </div>
+                `).join('') || '<p>No past jobs</p>';
+            } catch (error) {
+                alert('Error refreshing jobs: ' + error);
+            }
+        }
+
+        // Load jobs list when page loads
+        refreshJobs();
+        
+        // Refresh jobs list every 5 seconds
+        setInterval(refreshJobs, 5000);
+    </script>
+</body>
+</html> 
