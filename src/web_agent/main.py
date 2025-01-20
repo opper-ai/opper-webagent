@@ -81,6 +81,8 @@ def navigate_with_ai(goal, secrets=None, headless=True, debug=False):
             
             # Given the page, decide what to do
             decision = decide_subgoal(goal, page.url, trajectory, result)
+            _update_status("reflection", decision.reflection)
+
             console.print(Panel(decision.observation, title="Observation", border_style="blue"))
             console.print(Panel(decision.reflection, title="Reflection", border_style="yellow"))
             
@@ -100,7 +102,7 @@ def navigate_with_ai(goal, secrets=None, headless=True, debug=False):
                 trajectory.append({"action_goal": action.action_goal, "action": "navigate", "param": action.param, "result": result})
             
             elif action.action == "look":
-                _update_status("looking", f"Examining {action.action_goal}")
+                _update_status("looking", f"{action.action_goal}")
                 try:
                     result = look_at_page_content(page, action.action_goal)
                 except Exception as e:
@@ -175,7 +177,7 @@ def navigate_with_ai(goal, secrets=None, headless=True, debug=False):
             trajectory.append({"action": "stopped", "result": completed_result})
         
         # When done, leave the page open for a bit
-        time.sleep(10)
+        #time.sleep(10)
         duration = time.time() - start_time
         return {"result": completed_result, "trajectory": trajectory, "duration_seconds": duration}
     finally:
