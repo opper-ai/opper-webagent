@@ -189,8 +189,11 @@ def index():
                 padding: 4px 8px;
                 border-radius: 4px;
                 margin-right: 8px;
-                font-size: 0.875rem;
+                font-size: 0.75rem;
                 font-weight: 500;
+                min-width: 75px;
+                display: inline-block;
+                text-align: center;
             }
             @keyframes pulse {
                 0% {
