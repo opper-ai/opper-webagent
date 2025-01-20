@@ -1,0 +1,404 @@
+from flask import Flask, render_template, request, jsonify
+import sys
+import os
+from pathlib import Path
+
+# Add the src directory to the Python path
+root_dir = Path(__file__).parent.parent.parent
+sys.path.append(str(root_dir))
+sys.path.append(str(root_dir / 'src'))
+
+from web_agent import navigate_with_ai, get_status, stop
+
+app = Flask(__name__)
+
+@app.route('/', methods=['GET'])
+def index():
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Headless Web Automator</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+        <style>
+            body {
+                font-family: 'Inter', sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #111827;
+                color: #e5e7eb;
+                line-height: 1.6;
+                height: 100vh;
+                display: flex;
+            }
+            .sidebar {
+                width: 27%;
+                background-color: #1f2937;
+                padding: 32px;
+                box-shadow: 2px 0 6px rgba(0,0,0,0.2);
+                overflow-y: auto;
+                height: 100vh;
+                box-sizing: border-box;
+                position: fixed;
+                left: 0;
+                top: 0;
+                border-right: 1px solid #374151;
+            }
+            .main-content {
+                width: 73%;
+                margin-left: 27%;
+                padding: 32px;
+                box-sizing: border-box;
+                overflow-y: auto;
+                height: 100vh;
+            }
+            h1 {
+                color: #e5e7eb;
+                margin-bottom: 16px;
+                font-weight: 600;
+                font-size: 1.75rem;
+            }
+            .subtitle {
+                color: #9CA3AF;
+                margin-bottom: 32px;
+                font-size: 0.875rem;
+                line-height: 1.5;
+                border: 1px solid #374151;
+                border-radius: 8px;
+                padding: 16px;
+                background-color: #111827;
+            }
+            form {
+                margin-bottom: 32px;
+            }
+            .form-group {
+                margin-bottom: 24px;
+            }
+            label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 400;
+                color: #9CA3AF;
+                font-size: 0.875rem;
+            }
+            textarea, input {
+                width: 100%;
+                padding: 12px;
+                margin-bottom: 8px;
+                border: 1px solid #374151;
+                border-radius: 8px;
+                font-size: 1rem;
+                font-family: 'Inter', sans-serif;
+                transition: all 0.2s ease;
+                box-sizing: border-box;
+                background-color: #111827;
+                color: #e5e7eb;
+            }
+            textarea:focus, input:focus {
+                outline: none;
+                border-color: #10B981;
+                box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+            }
+            .checkbox-group {
+                display: flex;
+                align-items: center;
+                margin-bottom: 12px;
+            }
+            .checkbox-group input[type="checkbox"] {
+                width: auto;
+                margin-right: 8px;
+                margin-bottom: 0;
+                margin-top: 0;
+            }
+            .checkbox-group label {
+                display: inline;
+                margin: 0;
+                line-height: 1;
+            }
+            button {
+                background-color: #10B981;
+                color: #111827;
+                padding: 12px 24px;
+                border: none;
+                border-radius: 8px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                width: 100%;
+            }
+            button:hover {
+                background-color: #059669;
+                transform: translateY(-1px);
+            }
+            .output-card {
+                background-color: #1f2937;
+                padding: 24px;
+                border-radius: 12px;
+                border: 1px solid #374151;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                margin-bottom: 24px;
+                animation: slideIn 0.3s ease;
+            }
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            .loading {
+                display: none;
+                text-align: center;
+                margin: 24px 0;
+                color: #e5e7eb;
+                font-weight: 500;
+                padding: 16px;
+                background-color: #111827;
+                border-radius: 8px;
+                border: 1px solid #374151;
+                animation: pulse 2s infinite;
+            }
+            .status-update {
+                margin-bottom: 16px;
+                padding: 16px;
+                background-color: #111827;
+                color: #e5e7eb;
+                border-radius: 8px;
+                border: 1px solid #374151;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                animation: slideIn 0.3s ease;
+                position: relative;
+                display: flex;
+                align-items: center;
+            }
+            .status-update::before {
+                content: '';
+                width: 8px;
+                height: 8px;
+                background-color: #10B981;
+                border-radius: 50%;
+                margin-right: 12px;
+                animation: pulse 2s infinite;
+            }
+            .status-label {
+                background-color: #374151;
+                padding: 4px 8px;
+                border-radius: 4px;
+                margin-right: 8px;
+                font-size: 0.875rem;
+                font-weight: 500;
+            }
+            @keyframes pulse {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+                }
+                70% {
+                    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+                }
+            }
+            pre {
+                background-color: #111827;
+                color: #e5e7eb;
+                padding: 16px;
+                border-radius: 8px;
+                border: 1px solid #374151;
+                overflow-x: auto;
+                font-size: 0.875rem;
+            }
+            h3, h4 {
+                color: #e5e7eb;
+                margin: 16px 0 12px 0;
+                font-weight: 600;
+            }
+            p {
+                margin: 12px 0;
+                color: #e5e7eb;
+            }
+            strong {
+                color: #10B981;
+                font-weight: 600;
+            }
+            #stopButton {
+                background-color: #ef4444;
+                margin-top: 12px;
+                display: none;
+            }
+            #stopButton:hover {
+                background-color: #dc2626;
+            }
+            #runButton {
+                transition: all 0.3s ease;
+            }
+            #runButton.running {
+                background-color: #ef4444;
+            }
+            #runButton.running:hover {
+                background-color: #dc2626;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="sidebar">
+            <h1>Autonomous Web Agent</h1>
+            <p class="subtitle">This is an experimental compound web agent built on top of the Opper platform. Feel free to give it a try, but be warned that it may not always work as expected.</p>
+            <form id="agentForm">
+                <div class="form-group">
+                    <label for="goal">Goal:</label>
+                    <textarea id="goal" name="goal" rows="4" required 
+                        placeholder="What do you want to get done?"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="secrets">Secrets (optional):</label>
+                    <textarea id="secrets" name="secrets" rows="2" 
+                        placeholder="Enter any login details if needed..."></textarea>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="showBrowser" name="showBrowser">
+                    <label for="showBrowser">Show browser window</label>
+                </div>
+                <button type="submit" id="runButton">Run</button>
+            </form>
+            <div class="loading" id="loading">
+                Running web agent... This may take a few minutes.
+            </div>
+        </div>
+        <div class="main-content">
+            <div id="status"></div>
+            <div id="result"></div>
+        </div>
+        <script>
+            let statusInterval;
+            let lastStatus = '';
+            let isRunning = false;
+            
+            async function pollStatus() {
+                try {
+                    const response = await fetch('/status');
+                    const status = await response.json();
+                    const statusDiv = document.getElementById('status');
+                    
+                    if (status.action && status.action !== lastStatus) {
+                        const statusUpdate = document.createElement('div');
+                        statusUpdate.className = 'status-update';
+                        statusUpdate.innerHTML = `<span class="status-label">${status.action}</span>` + 
+                            (status.details ? status.details : '');
+                        statusDiv.appendChild(statusUpdate);
+                        lastStatus = status.action;
+                        
+                        // Scroll to bottom of status updates
+                        statusUpdate.scrollIntoView({ behavior: 'smooth' });
+                    }
+                    
+                    if (status.action === 'idle') {
+                        clearInterval(statusInterval);
+                        const runButton = document.getElementById('runButton');
+                        runButton.textContent = 'Run';
+                        runButton.classList.remove('running');
+                        runButton.disabled = false;
+                        isRunning = false;
+                    }
+                } catch (error) {
+                    console.error('Error polling status:', error);
+                }
+            }
+
+            document.getElementById('agentForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const loading = document.getElementById('loading');
+                const result = document.getElementById('result');
+                const status = document.getElementById('status');
+                const runButton = document.getElementById('runButton');
+                
+                if (isRunning) {
+                    // If running, stop the agent
+                    await fetch('/stop', { method: 'POST' });
+                    isRunning = false;
+                    runButton.textContent = 'Run';
+                    runButton.classList.remove('running');
+                    loading.style.display = 'none';
+                    return;
+                }
+
+                // Start new run
+                loading.style.display = 'block';
+                runButton.textContent = 'Stop';
+                runButton.classList.add('running');
+                result.innerHTML = '';
+                status.innerHTML = '';
+                lastStatus = '';
+                isRunning = true;
+                
+                // Start polling status
+                statusInterval = setInterval(pollStatus, 3000);
+                
+                try {
+                    const response = await fetch('/run', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            goal: form.goal.value,
+                            secrets: form.secrets.value,
+                            headless: !form.showBrowser.checked
+                        }),
+                    });
+                    
+                    const data = await response.json();
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'output-card';
+                    resultDiv.innerHTML = `
+                        <h3>Results</h3>
+                        <p><strong>Final Result:</strong> ${data.result}</p>
+                        <p><strong>Duration:</strong> ${data.duration_seconds.toFixed(2)} seconds</p>
+                        <h4>Trajectory</h4>
+                        <pre>${JSON.stringify(data.trajectory, null, 2)}</pre>
+                    `;
+                    result.appendChild(resultDiv);
+                } catch (error) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'output-card';
+                    errorDiv.innerHTML = `<p style="color: #ef4444;">Error: ${error.message}</p>`;
+                    result.appendChild(errorDiv);
+                } finally {
+                    loading.style.display = 'none';
+                    isRunning = false;
+                    runButton.textContent = 'Run';
+                    runButton.classList.remove('running');
+                }
+            });
+        </script>
+    </body>
+    </html>
+    '''
+
+@app.route('/status')
+def get_current_status():
+    return jsonify(get_status())
+
+@app.route('/stop', methods=['POST'])
+def stop_agent():
+    stop()
+    return jsonify({'status': 'stopped'})
+
+@app.route('/run', methods=['POST'])
+def run_agent():
+    data = request.json
+    result = navigate_with_ai(
+        goal=data['goal'],
+        secrets=data['secrets'] if data['secrets'] else None,
+        headless=data['headless'],
+        debug=False
+    )
+    return jsonify(result)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
