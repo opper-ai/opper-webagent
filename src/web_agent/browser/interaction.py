@@ -1,4 +1,4 @@
-from web_agent.models import Action, Decision, ActionResult
+from ..models import Action, Decision, ActionResult
 import tempfile
 import logging
 

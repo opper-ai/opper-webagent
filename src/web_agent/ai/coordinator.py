@@ -1,6 +1,6 @@
 from opperai import Opper
 from opperai.types import CallConfiguration, ImageInput
-from web_agent.models import Action, Decision, ActionResult, ScreenOutput, RelevantInteraction
+from ..models import Action, Decision, ActionResult, ScreenOutput, RelevantInteraction
 import logging
 
 opper = Opper()

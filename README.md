@@ -4,29 +4,66 @@ This project implements an AI-powered web navigation agent that can autonomously
 
 ## Overview
 
-The main script (`src/web_agent/main.py`) contains the core navigation logic that enables an AI agent to:
+The project consists of two main parts:
+1. A core `web_agent` library in the `src` directory
+2. Example implementations in the `examples` directory showing different ways to use the agent
 
+The web agent can:
 - Navigate to web pages
 - Analyze page content using computer vision
 - Make decisions about next actions
 - Interact with pages through clicking, typing, and scrolling
 - Track progress toward goals
 
-## Key Components
+## Quick Start
 
-### Main Navigation Loop
+The easiest way to try out the web agent is through the web interface:
 
-The `navigate_with_ai()` function implements the main navigation loop:
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-1. Takes a goal and optional login credentials as input
-2. Sets up a browser session using Playwright
-3. Continuously:
-   - Observes the current page state
-   - Decides on subgoals
-   - Determines next action
-   - Executes actions (navigate, click, type, scroll, etc.)
-   - Tracks trajectory of actions and results
-4. Terminates when goal is achieved
+# Start the web interface
+python examples/web_interface/app.py
+```
+
+Then open your browser to `http://localhost:8000`. The web interface provides:
+- A simple form to enter your navigation goals
+- Real-time feedback on the agent's actions
+- Visual preview of what the agent sees
+- Easy configuration of credentials and settings
+
+## Other Usage Options
+
+### 1. Web Agent Library
+
+Import and use the web agent directly in your Python code:
+
+```python
+from web_agent import navigate_with_ai
+
+result = navigate_with_ai(
+    goal="Your navigation goal",
+    secrets="optional credentials"
+)
+```
+
+### 2. Command Line Script
+```bash
+python examples/cli.py "Your goal here"
+```
+
+### 3. REST API Service
+```bash
+python examples/service.py
+```
+
+Then send requests to the service:
+```bash
+curl -X POST http://localhost:8000/navigate \
+  -H "Content-Type: application/json" \
+  -d '{"goal": "Your goal here", "secrets": "optional credentials"}'
+```
 
 ### Supported Actions
 
@@ -39,62 +76,41 @@ The agent can perform these actions:
 - `wait`: Pause execution
 - `finished`: Complete the goal
 
-### Usage
+### Example Usage
 
-There are two ways to use the navigation agent:
+Here's how to use the web agent library in your code:
 
-#### 1. Command Line Script
+```python
+from web_agent import navigate_with_ai
 
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Run the main script with your desired goal:
-   ```bash
-   python src/web_agent/main.py "Your goal here"
-   ```
+# Simple navigation
+result = navigate_with_ai("Navigate to example.com and click the login button")
 
-#### 2. Web Service
-
-1. Start the web service:
-   ```bash
-   python src/web_agent/service.py
-   ```
-2. Send requests to the service endpoints:
-   - POST `/navigate` with a JSON body containing:
-     ```json
-     {
-       "goal": "Your goal here",
-       "secrets": "optional login credentials"
-     }
-     ```
-
-### Example
-
-To navigate to a website and log in:
-
-1. Using the command line:
-   ```bash
-   python src/web_agent/main.py "Log in to example.com"
-   ```
-   With credentials:
-   ```bash
-   python src/web_agent/main.py "Log in to example.com" --secrets "username: your_username, password: your_password"
-   ```
-
-2. Using the web service:
-   ```bash
-   curl -X POST http://localhost:8000/navigate \
-     -H "Content-Type: application/json" \
-     -d '{"goal": "Log in to example.com", "secrets": "username: your_username, password: your_password"}'
-   ```
+# Navigation with credentials
+result = navigate_with_ai(
+    goal="Log in to example.com",
+    secrets={
+        "username": "your_username",
+        "password": "your_password"
+    }
+)
+```
 
 ### Configuration
 
-You can configure the agent's behavior by modifying the following parameters in `src/web_agent/main.py`:
+You can configure the agent's behavior through environment variables or when initializing the agent:
 
-- `DEBUG`: Set to `True` to enable debug mode and print additional information.
-- `timeout`: Adjust the timeout for page navigation actions.
+```python
+from web_agent import navigate_with_ai, WebAgentConfig
+
+config = WebAgentConfig(
+    debug=True,
+    timeout=30,
+    headless=False
+)
+
+result = navigate_with_ai("Your goal", config=config)
+```
 
 ### Logging
 
@@ -104,9 +120,9 @@ Logs are generated to help you understand the agent's decisions and actions. You
 
 The agent's capabilities can be extended by adding new actions or improving existing ones. To add a new action:
 
-1. Define the action in `src/web_agent/models/schemas.py`.
-2. Implement the action logic in `src/web_agent/ai/coordinator.py`.
-3. Update the main navigation loop in `src/web_agent/main.py` to handle the new action.
+1. Define the action in `src/web_agent/models/schemas.py`
+2. Implement the action logic in `src/web_agent/ai/coordinator.py`
+3. Update the main navigation loop to handle the new action
 
 ### Contributing
 
