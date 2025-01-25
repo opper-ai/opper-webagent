@@ -1,6 +1,6 @@
 from opperai import Opper
 from opperai.types import CallConfiguration, ImageInput
-from ..models import Action, Decision, ActionResult, ScreenOutput, RelevantInteraction
+from ..models import Action, Reflection, ActionResult, ScreenOutput, RelevantInteraction
 import logging
 from pydantic import create_model
 
@@ -31,7 +31,7 @@ def get_page_observation(goal, trajectory, screenshot_path, debug: bool = False)
         logging.error(f"Failed to analyze page: {str(e)}")
         return "Failed to analyze screenshot"
 
-def decide_subgoal(goal, current_url, trajectory, current_view):
+def reflect_on_progress(goal, current_url, trajectory, current_view):
     instruction = """Given the overall goal and current state, decide on the next immediate subgoal that needs to be accomplished.
     This should be a single, clear objective that moves us one step closer to the overall goal.
     
@@ -43,7 +43,7 @@ def decide_subgoal(goal, current_url, trajectory, current_view):
     """
     
     subgoal, _ = opper.call(
-        name="decide_subgoal",
+        name="reflect_on_progress",
         instructions=instruction,
         input={
             "goal": goal,
@@ -52,7 +52,7 @@ def decide_subgoal(goal, current_url, trajectory, current_view):
             "current_page": current_view.observation
         },
         model="anthropic/claude-3.5-sonnet",
-        output_type=Decision,
+        output_type=Reflection,
         configuration=CallConfiguration(evaluation={"enabled": False}),
     )
     return subgoal

@@ -6,5 +6,5 @@ __all__ = [
     'Action',
     'RelevantInteraction',
     'ScreenOutput',
-    'Decision'
+    'Reflection'
 ]

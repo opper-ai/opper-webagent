@@ -22,7 +22,7 @@ class ScreenOutput(BaseModel):
     reflection: str
     relevant_page_actions: list[RelevantInteraction]
 
-class Decision(BaseModel):
+class Reflection(BaseModel):
     observation: str
     reflection: str
-    subgoal: str 
+    subgoal: str

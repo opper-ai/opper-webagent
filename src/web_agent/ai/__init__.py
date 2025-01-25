@@ -1,5 +1,5 @@
 from .coordinator import (
-    decide_subgoal,
+    reflect_on_progress,
     decide_next_action,
     look_at_page_content,
     get_page_observation,
@@ -8,7 +8,7 @@ from .coordinator import (
 from .vision import find_coordinates
 
 __all__ = [
-    'decide_subgoal',
+    'reflect_on_progress',
     'decide_next_action',
     'look_at_page_content',
     'get_page_observation',

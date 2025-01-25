@@ -13,7 +13,7 @@ from pydantic import BaseModel, create_model, ValidationError
 from .browser.setup import setup_browser
 from .browser.interaction import click_at_coordinates, take_screenshot, draw_click_dot
 from .ai.coordinator import (
-    decide_subgoal,
+    reflect_on_progress,
     decide_next_action,
     look_at_page_content,
     get_page_observation,
@@ -107,7 +107,7 @@ def navigate_with_ai(goal, secrets=None, headless=True, debug=False, response_sc
             result = get_page_observation(subgoal, trajectory, screenshot_path)
             
             # Given the page, decide what to do
-            decision = decide_subgoal(goal, page.url, trajectory, result)
+            decision = reflect_on_progress(goal, page.url, trajectory, result)
             _update_status("reflection", decision.reflection)
 
             if debug:
