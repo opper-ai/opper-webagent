@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 import sys
 import os
 from pathlib import Path
+import json
+import tempfile
 
 # Add the src directory to the Python path
 root_dir = Path(__file__).parent.parent.parent
@@ -30,6 +32,7 @@ def index():
                 line-height: 1.6;
                 height: 100vh;
                 display: flex;
+                overflow: hidden;
             }
             .sidebar {
                 width: 27%;
@@ -49,8 +52,44 @@ def index():
                 margin-left: 27%;
                 padding: 32px;
                 box-sizing: border-box;
-                overflow-y: auto;
                 height: 100vh;
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+                overflow-y: auto;
+            }
+            .screenshot-container {
+                background-color: #1f2937;
+                border-radius: 12px;
+                border: 1px solid #374151;
+                overflow: hidden;
+                position: relative;
+                flex-shrink: 0;
+                max-height: 40vh;
+            }
+            .screenshot-container.in-results {
+                max-height: none;
+                margin-bottom: 24px;
+            }
+            .screenshot-container img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                display: block;
+            }
+            .screenshot-container.in-results img {
+                height: auto;
+            }
+            .screenshot-container.loading::after {
+                content: 'Loading...';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: #e5e7eb;
+                background-color: rgba(31, 41, 55, 0.8);
+                padding: 8px 16px;
+                border-radius: 4px;
             }
             h1 {
                 color: #e5e7eb;
@@ -137,7 +176,6 @@ def index():
                 border-radius: 12px;
                 border: 1px solid #374151;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                margin-bottom: 24px;
                 animation: slideIn 0.3s ease;
             }
             @keyframes slideIn {
@@ -183,6 +221,10 @@ def index():
                 border-radius: 50%;
                 margin-right: 12px;
                 animation: pulse 2s infinite;
+                min-width: 8px;
+                min-height: 8px;
+                max-width: 8px; 
+                max-height: 8px;
             }
             .status-label {
                 background-color: #374151;
@@ -245,6 +287,54 @@ def index():
             #runButton.running:hover {
                 background-color: #dc2626;
             }
+            .status-log {
+                background-color: #111827;
+                border: 1px solid #374151;
+                border-radius: 8px;
+                padding: 16px;
+                flex: 1;
+                overflow-y: auto;
+                font-family: monospace;
+                font-size: 0.875rem;
+                line-height: 1.5;
+                min-height: 0;
+            }
+            #result {
+                flex: 1;
+                overflow-y: auto;
+                min-height: 0;
+            }
+            .status-entry {
+                padding: 8px;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+            }
+            .status-entry:last-child {
+                margin-bottom: 0;
+            }
+            .status-entry::before {
+                content: '';
+                width: 8px;
+                height: 8px;
+                background-color: #10B981;
+                border-radius: 50%;
+                margin-right: 12px;
+                animation: pulse 2s infinite;
+            }
+            .status-tag {
+                background-color: #374151;
+                color: #e5e7eb;
+                padding: 2px 8px;
+                border-radius: 4px;
+                margin-right: 12px;
+                font-size: 0.75rem;
+                white-space: nowrap;
+            }
+            .status-details {
+                color: #e5e7eb;
+                flex: 1;
+            }
         </style>
     </head>
     <body>
@@ -262,6 +352,11 @@ def index():
                     <textarea id="secrets" name="secrets" rows="2" 
                         placeholder="Enter any login details if needed..."></textarea>
                 </div>
+                <div class="form-group">
+                    <label for="responseSchema">Response Schema (optional):</label>
+                    <textarea id="responseSchema" name="responseSchema" rows="4" 
+                        placeholder="Enter a JSON schema to structure the response..."></textarea>
+                </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="showBrowser" name="showBrowser">
                     <label for="showBrowser">Show browser window</label>
@@ -273,13 +368,42 @@ def index():
             </div>
         </div>
         <div class="main-content">
-            <div id="status"></div>
-            <div id="result"></div>
+            <div class="screenshot-container">
+                <img id="latestScreenshot" src="" alt="Latest screenshot" style="display: none;">
+            </div>
+            <div id="status" class="status-log"></div>
         </div>
         <script>
             let statusInterval;
+            let screenshotInterval;
             let lastStatus = '';
+            let lastDetails = '';
             let isRunning = false;
+            
+            function updateScreenshot() {
+                const img = document.getElementById('latestScreenshot');
+                const container = img.parentElement;
+                
+                // Add timestamp to prevent caching
+                const timestamp = new Date().getTime();
+                fetch(`/latest_screenshot?t=${timestamp}`)
+                    .then(response => {
+                        if (response.ok) {
+                            return response.blob();
+                        }
+                        throw new Error('Screenshot not available');
+                    })
+                    .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        img.src = url;
+                        img.style.display = 'block';
+                        container.classList.remove('loading');
+                    })
+                    .catch(() => {
+                        img.style.display = 'none';
+                        container.classList.add('loading');
+                    });
+            }
             
             async function pollStatus() {
                 try {
@@ -287,16 +411,19 @@ def index():
                     const status = await response.json();
                     const statusDiv = document.getElementById('status');
                     
-                    if (status.action && status.action !== lastStatus) {
+                    if (status.action !== lastStatus || status.details !== lastDetails) {
                         const statusUpdate = document.createElement('div');
-                        statusUpdate.className = 'status-update';
-                        statusUpdate.innerHTML = `<span class="status-label">${status.action}</span>` + 
-                            (status.details ? status.details : '');
+                        statusUpdate.className = 'status-entry';
+                        statusUpdate.innerHTML = `
+                            <span class="status-tag">${status.action}</span>
+                            <span class="status-details">${status.details || ''}</span>
+                        `;
                         statusDiv.appendChild(statusUpdate);
                         lastStatus = status.action;
+                        lastDetails = status.details;
                         
-                        // Scroll to bottom of status updates
-                        statusUpdate.scrollIntoView({ behavior: 'smooth' });
+                        // Auto-scroll to the latest update
+                        statusUpdate.scrollIntoView({ behavior: 'smooth', block: 'end' });
                     }
                     
                     if (status.action === 'idle') {
@@ -316,8 +443,7 @@ def index():
                 e.preventDefault();
                 const form = e.target;
                 const loading = document.getElementById('loading');
-                const result = document.getElementById('result');
-                const status = document.getElementById('status');
+                const mainContent = document.querySelector('.main-content');
                 const runButton = document.getElementById('runButton');
                 
                 if (isRunning) {
@@ -327,6 +453,7 @@ def index():
                     runButton.textContent = 'Run';
                     runButton.classList.remove('running');
                     loading.style.display = 'none';
+                    clearInterval(screenshotInterval);
                     return;
                 }
 
@@ -334,13 +461,22 @@ def index():
                 loading.style.display = 'block';
                 runButton.textContent = 'Stop';
                 runButton.classList.add('running');
-                result.innerHTML = '';
-                status.innerHTML = '';
+                
+                // Reset main content to show live status
+                mainContent.innerHTML = `
+                    <div class="screenshot-container">
+                        <img id="latestScreenshot" src="" alt="Latest screenshot" style="display: none;">
+                    </div>
+                    <div id="status" class="status-log"></div>
+                `;
+                
                 lastStatus = '';
+                lastDetails = '';
                 isRunning = true;
                 
-                // Start polling status
+                // Start polling status and screenshot
                 statusInterval = setInterval(pollStatus, 3000);
+                screenshotInterval = setInterval(updateScreenshot, 2000);
                 
                 try {
                     const response = await fetch('/run', {
@@ -351,31 +487,62 @@ def index():
                         body: JSON.stringify({
                             goal: form.goal.value,
                             secrets: form.secrets.value,
-                            headless: !form.showBrowser.checked
+                            headless: !form.showBrowser.checked,
+                            responseSchema: form.responseSchema.value
                         }),
                     });
                     
                     const data = await response.json();
+                    
+                    // Get the final screenshot one last time
+                    await updateScreenshot();
+                    
+                    // Replace content with results
+                    mainContent.innerHTML = '';
+                    
+                    // Create single result card
                     const resultDiv = document.createElement('div');
                     resultDiv.className = 'output-card';
+
+                    // Try to parse the result as JSON
+                    let finalResult = data.result;
+                    try {
+                        if (typeof finalResult === 'string') {
+                            const parsedResult = JSON.parse(finalResult);
+                            finalResult = JSON.stringify(parsedResult, null, 2);
+                        } else {
+                            finalResult = JSON.stringify(finalResult, null, 2);
+                        }
+                    } catch (e) {
+                        // If parsing fails, use the original string
+                        finalResult = data.result;
+                    }
+
                     resultDiv.innerHTML = `
-                        <h3>Results</h3>
-                        <p><strong>Final Result:</strong> ${data.result}</p>
+                        <h3>Final Results</h3>
+                        <div class="screenshot-container in-results">
+                            <h4>Final State</h4>
+                            <img src="/latest_screenshot?t=${new Date().getTime()}" alt="Final screenshot">
+                        </div>
+                        <p><strong>Final Result:</strong></p>
+                        <pre>${finalResult}</pre>
                         <p><strong>Duration:</strong> ${data.duration_seconds.toFixed(2)} seconds</p>
                         <h4>Trajectory</h4>
                         <pre>${JSON.stringify(data.trajectory, null, 2)}</pre>
                     `;
-                    result.appendChild(resultDiv);
+                    mainContent.appendChild(resultDiv);
                 } catch (error) {
                     const errorDiv = document.createElement('div');
                     errorDiv.className = 'output-card';
                     errorDiv.innerHTML = `<p style="color: #ef4444;">Error: ${error.message}</p>`;
-                    result.appendChild(errorDiv);
+                    mainContent.appendChild(errorDiv);
                 } finally {
                     loading.style.display = 'none';
                     isRunning = false;
                     runButton.textContent = 'Run';
                     runButton.classList.remove('running');
+                    clearInterval(statusInterval);
+                    clearInterval(screenshotInterval);
                 }
             });
         </script>
@@ -399,9 +566,27 @@ def run_agent():
         goal=data['goal'],
         secrets=data['secrets'] if data['secrets'] else None,
         headless=data['headless'],
-        debug=False
+        debug=False,
+        response_schema=json.loads(data['responseSchema']) if data['responseSchema'] else None
     )
     return jsonify(result)
+
+@app.route('/latest_screenshot')
+def get_latest_screenshot():
+    # Get all files in the temp directory
+    temp_dir = tempfile.gettempdir()
+    screenshot_files = [f for f in os.listdir(temp_dir) if f.endswith('.png')]
+    
+    if not screenshot_files:
+        return jsonify({'error': 'No screenshot available'}), 404
+    
+    # Sort by creation time and get the latest
+    latest_screenshot = max(
+        [os.path.join(temp_dir, f) for f in screenshot_files],
+        key=os.path.getmtime
+    )
+    
+    return send_file(latest_screenshot, mimetype='image/png')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
