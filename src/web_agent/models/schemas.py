@@ -16,7 +16,6 @@ class RelevantInteraction(BaseModel):
     type: str
     label: str
     description: str
-    #xy_coordinate: Tuple[float, float] = (0.0, 0.0)
 
 class ScreenOutput(BaseModel):
     observation: str

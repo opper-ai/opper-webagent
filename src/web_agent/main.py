@@ -3,7 +3,12 @@ from rich.panel import Panel
 from rich import print
 import time
 import argparse
+import json
 from threading import Lock, Event
+from typing import List, Dict, Optional
+from dataclasses import dataclass
+from datetime import datetime
+from pydantic import BaseModel, create_model, ValidationError
 
 from .browser.setup import setup_browser
 from .browser.interaction import click_at_coordinates, take_screenshot, draw_click_dot
@@ -12,29 +17,45 @@ from .ai.coordinator import (
     decide_next_action,
     look_at_page_content,
     get_page_observation,
+    bake_response,
 )
 from .ai.vision import find_coordinates
 from opperai import trace
 
-# Pretty output
+# Pretty output - only used in debug mode
 console = Console()
+
+@dataclass
+class StatusEntry:
+    timestamp: datetime
+    action: str
+    details: str = None
 
 # Global status tracking
 _status_lock = Lock()
-_current_status = {"action": None, "details": None}
+_status_log: List[StatusEntry] = []
 _stop_event = Event()
 _stop_event.clear()  # Make sure stop event starts cleared
 
-def get_status():
+def get_status() -> Dict:
     """Get the current status of the web agent."""
     with _status_lock:
-        return dict(_current_status)
+        if _status_log:
+            latest = _status_log[-1]
+            return {
+                "action": latest.action,
+                "details": latest.details
+            }
+        return {"action": None, "details": None}
 
-def _update_status(action, details=None):
+def _update_status(action: str, details: str = None):
     """Update the current status of the web agent."""
     with _status_lock:
-        _current_status["action"] = action
-        _current_status["details"] = details
+        _status_log.append(StatusEntry(
+            timestamp=datetime.now(),
+            action=action,
+            details=details
+        ))
 
 def stop():
     """Stop the currently running navigation."""
@@ -42,16 +63,22 @@ def stop():
 
 # Trace this session
 @trace
-def navigate_with_ai(goal, secrets=None, headless=True, debug=False):
+def navigate_with_ai(goal, secrets=None, headless=True, debug=False, response_schema: Optional[Dict] = None):
     start_time = time.time()
     # Reset stop event at start of navigation
     _stop_event.clear()
+
+    if debug:
+        print(response_schema)
+        console.print(Panel(f"Starting AI-guided navigation with goal: {goal}", title="Navigation Start", border_style="green"))
     
-    console.print(Panel(f"Starting AI-guided navigation with goal: {goal}", title="Navigation Start", border_style="green"))
     _update_status("starting", f"Goal: {goal}")
    
     if secrets:
         goal = goal + "\n\nLogin details (optional):\n" + secrets
+
+    if response_schema:
+        goal = goal + "\n\nPlease structure the final response according to this schema:\n" + json.dumps(response_schema, indent=2)
 
     subgoal = None
     trajectory = []
@@ -73,7 +100,7 @@ def navigate_with_ai(goal, secrets=None, headless=True, debug=False):
 
             # Take a screenshot of the current page
             screenshot_path, screenshot_result = take_screenshot(page)
-            if not screenshot_result.success:
+            if not screenshot_result.success and debug:
                 console.print(Panel(f"Failed to take screenshot: {screenshot_result.error}", title="Error", border_style="red"))
             
             # Produce an observation of the current page
@@ -83,12 +110,14 @@ def navigate_with_ai(goal, secrets=None, headless=True, debug=False):
             decision = decide_subgoal(goal, page.url, trajectory, result)
             _update_status("reflection", decision.reflection)
 
-            console.print(Panel(decision.observation, title="Observation", border_style="blue"))
-            console.print(Panel(decision.reflection, title="Reflection", border_style="yellow"))
+            if debug:
+                console.print(Panel(decision.observation, title="Observation", border_style="blue"))
+                console.print(Panel(decision.reflection, title="Reflection", border_style="yellow"))
             
             # Construct an action of what to do next
             action = decide_next_action(decision.subgoal, page.url, trajectory, result)
-            console.print(Panel(action.action_goal + ": " + action.param, title="Action", border_style="green"))
+            if debug:
+                console.print(Panel(action.action_goal + ": " + action.param, title="Action", border_style="green"))
             
             # Take action on actions
             if action.action == "navigate":
@@ -167,17 +196,30 @@ def navigate_with_ai(goal, secrets=None, headless=True, debug=False):
 
             elif action.action == "finished":
                 _update_status("finishing up", action.param)
-                console.print("[green]Goal completed![/green]")
+                if debug:
+                    console.print("[green]Goal completed![/green]")
                 completed_result = action.param
-                trajectory.append({"action_goal": action.action_goal, "action": "finished", "param": action.param, "result": "Reached goal"})
+                
+                if debug:
+                    print(response_schema)
+                # If a response schema was provided, validate and structure the response
+                if response_schema:
+                    try:
+                        final_response = bake_response(completed_result, response_schema)
+                        completed_result = final_response
+                    except Exception as e:
+                        completed_result = {
+                            "error": "Failed to validate response against schema",
+                            "original_response": completed_result,
+                            "validation_error": str(e)
+                        }
+                trajectory.append({"action_goal": action.action_goal, "action": "finished", "param": action.param, "result": completed_result})
                 break
 
         if _stop_event.is_set():
             completed_result = "Navigation stopped by user"
             trajectory.append({"action": "stopped", "result": completed_result})
         
-        # When done, leave the page open for a bit
-        #time.sleep(10)
         duration = time.time() - start_time
         return {"result": completed_result, "trajectory": trajectory, "duration_seconds": duration}
     finally:
@@ -192,12 +234,15 @@ def main():
     parser.add_argument("--secrets", type=str, help="Optional login details", default=None)
     parser.add_argument("--headless", action="store_true", help="Run browser in headless mode", default=False)
     parser.add_argument("--debug", action="store_true", help="Enable debug output", default=False)
+    parser.add_argument("--response-schema", type=str, help="JSON schema for structuring the final response", default=None)
     args = parser.parse_args()
 
-    result = navigate_with_ai(args.goal, args.secrets, args.headless, args.debug)
-    print(f"Final result: {result['result']}")
-    print(f"Duration: {result['duration_seconds']:.2f} seconds")
-    print(f"Trajectory: {result['trajectory']}")
+    response_schema = json.loads(args.response_schema) if args.response_schema else None
+    result = navigate_with_ai(args.goal, args.secrets, args.headless, args.debug, response_schema)
+    if args.debug:
+        print(f"Final result: {result['result']}")
+        print(f"Duration: {result['duration_seconds']:.2f} seconds")
+        print(f"Trajectory: {result['trajectory']}")
 
 if __name__ == "__main__":
     main()

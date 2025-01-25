@@ -2,6 +2,7 @@ from opperai import Opper
 from opperai.types import CallConfiguration, ImageInput
 from ..models import Action, Decision, ActionResult, ScreenOutput, RelevantInteraction
 import logging
+from pydantic import create_model
 
 opper = Opper()
 
@@ -48,7 +49,7 @@ def decide_subgoal(goal, current_url, trajectory, current_view):
             "goal": goal,
             "trajectory": trajectory[-10:],
             "current_url": current_url, 
-            "current_page": current_view
+            "current_page": current_view.observation
         },
         model="anthropic/claude-3.5-sonnet",
         output_type=Decision,
@@ -74,7 +75,7 @@ def decide_next_action(subgoal, current_url, trajectory, current_view):
     * The type action always follows with an automatic tab and enter press.
     * Use scroll_down or scroll_up actions to navigate vertically on the page. Scroll down is useful for seeing more results, scroll up for seeing filters etc.
     * You can extract text content of the page with the look action.
-    * When you have the answer or have met the goal use the finish action. Add all details to the param action.
+    * When you have the answer or have met the goal use the finish action. Add all details that you have of the result of the task to the action params
 
     Continue until you have clearly met the goal. Always accept cookie popups or any other popups before proceeding.
 
@@ -112,3 +113,20 @@ def look_at_page_content(page, action_goal):
         result = f"Looking at page content failed: {str(e)}"
     
     return result 
+
+def bake_response(raw_response: str, response_model):
+    """Structure and validate a raw response according to a provided schema model."""
+    try:
+        result, _ = opper.call(
+            name="bake_response",
+            instructions="Given a raw text response, bake a final response.",
+            input={
+                "raw_response": raw_response,
+            },
+            model="gcp/gemini-1.5-flash-002-eu",
+            output_type=response_model,
+            configuration=CallConfiguration(evaluation={"enabled": False}),
+        )
+        return result
+    except Exception as e:
+        raise ValueError(f"Failed to validate response: {str(e)}") 

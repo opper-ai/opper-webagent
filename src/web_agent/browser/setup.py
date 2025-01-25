@@ -2,7 +2,7 @@ from playwright.sync_api import sync_playwright
 import os
 import atexit
 
-def setup_browser(session_dir="./browser_data", headless=False):
+def setup_browser(session_dir="./browser_data", headless=False, remote_debugging_port=None):
     """Set up and configure the browser instance with persistence"""
     # Create session directory if it doesn't exist
     os.makedirs(session_dir, exist_ok=True)
@@ -10,7 +10,14 @@ def setup_browser(session_dir="./browser_data", headless=False):
 
     # Start playwright
     playwright = sync_playwright().start()
-    browser = playwright.chromium.launch(headless=headless)
+    
+    # Configure browser launch args
+    browser_args = {}
+    if remote_debugging_port:
+        browser_args["args"] = [f"--remote-debugging-port={remote_debugging_port}"]
+    browser_args["headless"] = headless
+    
+    browser = playwright.chromium.launch(**browser_args)
     context = browser.new_context(
         viewport={"width": 1280, "height": 720},
         storage_state=storage_file if os.path.exists(storage_file) else None
