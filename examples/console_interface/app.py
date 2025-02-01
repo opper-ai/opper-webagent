@@ -9,8 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.markdown import Markdown
-from rich.live import Live
-from rich.layout import Layout
+from rich.prompt import Prompt, Confirm
 
 # Add the src directory to the Python path
 root_dir = Path(__file__).parent.parent.parent
@@ -37,11 +36,8 @@ def display_trajectory(trajectory):
     
     console.print(table)
 
-def create_status_entry(status):
+def create_status_entry(action, details):
     """Create a status entry for display"""
-    action = status.get('action', 'None')
-    details = status.get('details', '')
-    
     if not action and not details:
         return None
     
@@ -56,9 +52,50 @@ def create_status_entry(status):
         padding=(0, 1)
     )
 
+def get_task_configuration():
+    """Interactive dialog to get task configuration from user"""
+    console.print(Panel.fit(
+        "[bold blue]Task Configuration[/bold blue]\n"
+        "Please provide the following information:",
+        border_style="blue"
+    ))
+    
+    # Get the main task description
+    task = Prompt.ask("\n[cyan]Enter the task description[/cyan]")
+    
+    # Ask about browser visibility
+    headless = not Confirm.ask(
+        "\n[cyan]Would you like to see the browser window while the task runs?[/cyan]",
+        default=False
+    )
+    
+    # Ask about schema
+    use_schema = Confirm.ask(
+        "\n[cyan]Would you like to provide a response schema for validation?[/cyan]",
+        default=False
+    )
+    
+    schema = None
+    if use_schema:
+        schema_input = Prompt.ask(
+            "\n[cyan]Enter the JSON schema string[/cyan] (press Enter to skip)",
+            default="{}"
+        )
+        try:
+            schema = json.loads(schema_input)
+        except json.JSONDecodeError:
+            console.print("[yellow]Invalid JSON schema. Proceeding without schema.[/yellow]")
+            schema = None
+    
+    return {
+        "task": task,
+        "headless": headless,
+        "schema": schema
+    }
+
 def main():
     parser = argparse.ArgumentParser(description="Web Agent Console Interface - Browser automation with AI assistance")
-    parser.add_argument("task", help="Task description for the AI to execute")
+    parser.add_argument("--task", help="Task description for the AI to execute")
     parser.add_argument("--no-headless", action="store_true", help="Show browser window (default: headless)")
     parser.add_argument("--schema", help="JSON schema string for response validation")
     
@@ -70,49 +107,50 @@ def main():
         border_style="green"
     ))
 
-    response_schema = json.loads(args.schema) if args.schema else None
+    # If no task is provided via command line, use interactive configuration
+    if not args.task:
+        config = get_task_configuration()
+        task = config["task"]
+        headless = config["headless"]
+        response_schema = config["schema"]
+    else:
+        task = args.task
+        headless = not args.no_headless
+        response_schema = json.loads(args.schema) if args.schema else None
+
     result = None
     error = None
-    
-    # Create a thread to run the navigation
-    def run_navigation():
-        nonlocal result, error
-        try:
-            result = navigate_with_ai(args.task, headless=not args.no_headless, response_schema=response_schema)
-        except Exception as e:
-            error = e
-    
-    navigation_thread = threading.Thread(target=run_navigation)
-    navigation_thread.start()
-    
+
     try:
-        # Poll and display status while automation is running
-        last_status = None
-        while navigation_thread.is_alive():
-            status = get_status()
-            if status != last_status:  # Only print if status changed
-                status_entry = create_status_entry(status)
-                if status_entry:
-                    console.print(status_entry)
-                last_status = status.copy()  # Make a copy to properly detect changes
-                
-            time.sleep(0.1)  # Small sleep to prevent CPU overuse
-        
-        # Wait for thread to complete
-        navigation_thread.join()
-        
-        # Check if there was an error
-        if error:
-            raise error
-            
+        def status_callback(action, details):
+            status_entry = create_status_entry(action, details)
+            if status_entry:
+                console.print(status_entry)
+
+        # Show configuration summary
+        console.print(Panel(
+            "[bold cyan]Task Configuration Summary:[/bold cyan]\n" +
+            f"Task: {task}\n" +
+            f"Browser Mode: {'visible' if not headless else 'headless'}\n" +
+            f"Schema Validation: {'enabled' if response_schema else 'disabled'}",
+            border_style="cyan"
+        ))
+
+        if Confirm.ask("\n[cyan]Proceed with the task?[/cyan]", default=True):
+            result = navigate_with_ai(
+                task,
+                headless=headless,
+                response_schema=response_schema,
+                status_callback=status_callback
+            )
+        else:
+            console.print("[yellow]Task cancelled by user[/yellow]")
+            return
+
         # Display execution summary
         console.print("\n[bold green]Execution Summary[/bold green]")
         
         if isinstance(result, dict):
-            # Display trajectory if available
-            if 'trajectory' in result:
-                display_trajectory(result['trajectory'])
-            
             # Display final result
             console.print(Panel(
                 "[bold green]Final Result:[/bold green]\n" + 
@@ -121,15 +159,11 @@ def main():
                 border_style="green"
             ))
             
-            # Display metadata
-            metadata_table = Table(show_header=False, box=None)
-            metadata_table.add_row("Duration:", f"{result.get('duration_seconds', 0):.2f} seconds")
-            if 'status' in result:
-                metadata_table.add_row("Status:", result['status'])
-            console.print(metadata_table)
+            # Display duration
+            console.print(f"[cyan]Duration:[/cyan] {result.get('duration_seconds', 0):.2f} seconds")
         else:
             console.print(Panel(f"[green]Result:[/green]\n{result}", border_style="green"))
-            
+
     except Exception as e:
         console.print(Panel(
             f"[red bold]Error occurred during execution:[/red bold]\n{str(e)}",

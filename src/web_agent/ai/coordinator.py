@@ -23,7 +23,7 @@ def get_page_observation(goal, trajectory, screenshot_path, debug: bool = False)
             instructions=instruction,
             input=ImageInput.from_path(screenshot_path),
             output_type=ScreenOutput,
-            model="anthropic/claude-3.5-sonnet",
+            model="anthropic/claude-3.5-sonnet-20241022",
             configuration=CallConfiguration(evaluation={"enabled": False}),
         )
         return result
@@ -32,14 +32,13 @@ def get_page_observation(goal, trajectory, screenshot_path, debug: bool = False)
         return "Failed to analyze screenshot"
 
 def reflect_on_progress(goal, current_url, trajectory, current_view):
-    instruction = """Given the overall goal and current state, decide on the next immediate subgoal that needs to be accomplished.
-    This should be a single, clear objective that moves us one step closer to the overall goal.
-    
-    Consider:
-    * What is visible on the current page
-    * What has been done so far in the trajectory
-    * What logical next step would make progress
-    * Keep subgoals small and achievable in one or two actions
+    instruction = """Given the goal, the content of the current page and the trajectory of what you have attempted, decide on weather to continue working towards the goal. Once you have fully completed the goal, you can decide to complete the task with finish. If you are repeatedly failing to complete the goal, you can decide to break.
+
+    Important:
+    * If the trajectory is empty, you should always continue .
+    * Always continue until the trajectory fully shows you have fully met the goal, including collecting any necessary data and information. Provide subgoal as input to the continue decision.
+    * If you have repeated the same action multiple times without success, you may break the task
+    * The finish decision should be used when you have fully met the goal. Provide all the necessary details as params.
     """
     
     subgoal, _ = opper.call(
@@ -51,7 +50,7 @@ def reflect_on_progress(goal, current_url, trajectory, current_view):
             "current_url": current_url, 
             "current_page": current_view.observation
         },
-        model="anthropic/claude-3.5-sonnet",
+        model="fireworks/deepseek-v3",
         output_type=Reflection,
         configuration=CallConfiguration(evaluation={"enabled": False}),
     )

@@ -25,4 +25,5 @@ class ScreenOutput(BaseModel):
 class Reflection(BaseModel):
     observation: str
     reflection: str
-    subgoal: str
+    decision: Literal["continue", "finished", "break"]
+    param: str = Field(description="A detailed input to executing the decision")

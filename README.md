@@ -1,71 +1,119 @@
-# AI Web Navigation Agent
+# Scriptable AI-Powered Compound Web Agent
 
-This project implements an AI-powered web navigation agent that can autonomously browse websites to accomplish specified goals.
+This project implements an AI-powered web navigation agent built to autonomously and headlessly browse websites to accomplish tasks such as scraping data, automating form submissions, and more. It is focused on being scriptable and implemented as a backend service, but examples exists to build interfaces around it. It is a compound agent in that it uses specific models for different parts of the agents tasks.
 
-## Overview
+## Features
 
-The project consists of two main parts:
-1. A core `web_agent` library in the `src` directory
-2. Example implementations in the `examples` directory showing different ways to use the agent
+- **Set Goal with Natural Language**: Simply describe what you want the agent to do with a web browser
+- **Headless Operation**: Run invisibly in the background or watch the agent work with browser visibility
+- **Pass Authentication details**: Pass login credentials and sensitive data for authenticated sessions
+- **Real-time Status Updates**: Monitor the agent's progress through a callback function
+- **Structured Completion Output**: Define JSON schemas to format the extracted data exactly how want it. 
+- **Example Interfaces**: Use through Python API, web interface, CLI, or REST API
 
-The web agent can:
-- Navigate to web pages
-- Analyze page content using computer vision
-- Make decisions about next actions
-- Interact with pages through clicking, typing, and scrolling
-- Track progress toward goals
+## About the Agent
+
+The agent is powered by the Opper API and the Opper AI platform to access models, perform tracing and more. The agent is a so called compound agent that utilizes specific models for different tasks.
+
+* Molmo for interpreting images and finding where to click
+* Deepseek V3 for reflection, reasoning and planning
+* Mistral Large for determining and specifying actions
+
+The agent can perform the following actions:
+* `navigate`: Go to a specific URL
+* `look`: Analyze page content
+* `click`: Click at specific coordinates
+* `type`: Enter text in forms 
+* `scroll_down`/`scroll_up`: Scroll the page
+* `wait`: Pause execution
+* `finished`: Finish the goal with structured output results
+
+## Installation
+
+First sign up to Opper at https://opper.ai/ and create an API key to access models, tracing and more. Opper free tier allows for $10 of free credits to get started.
+
+Export the API key as an environment variable:
+
+```bash
+export OPPER_API_KEY=<your-api-key>
+```
+
+Then install the required packages:
+
+```bash
+pip install -r requirements.txt
+```
 
 ## Quick Start
 
-The easiest way to try out the web agent is through the web interface:
-
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Start the web interface
-python examples/web_interface/app.py
-```
-
-Then open your browser to `http://localhost:8000`. The web interface provides:
-- A simple form to enter your navigation goals
-- Real-time feedback on the agent's actions
-- Visual preview of what the agent sees
-- Easy configuration of credentials and settings
-
-## Other Usage Options
-
-### 1. Web Agent Library
-
-Import and use the web agent directly in your Python code:
+The web agent can be used directly in your Python code:
 
 ```python
 from web_agent import navigate_with_ai
 
+# Define a callback for monitoring progress
+def print_status(action, details):
+    print(f"Status: {action} - {details}")
+
+# Example: Scrape product information with authentication
 result = navigate_with_ai(
-    goal="Your navigation goal",
-    secrets="optional credentials"
+    # Describe your goal in natural language
+    goal="Go to linkedin and verify that the opper ai account has a post on Deepseek",
+    
+    # Provide credentials if needed
+    secrets={
+        "username": "your_username",
+        "password": "your_password"
+    },
+    
+    # Choose browser visibility
+    headless=True,  # Set True to run in background
+    
+    # Enable debug mode for detailed logging
+    debug=False,
+    
+    # Define the structure of the data you want
+    response_schema={
+        "type": "object",
+        "properties": {
+            "is_posted": {"type": "boolean"},
+            "post_content": {"type": "string"}
+        }
+    },
+    
+    # Monitor the agent's progress
+    status_callback=print_status
 )
+
+# Access the results
+print(result["result"].get("is_posted"))  # True / False
+print(result["trajectory"])       # List of actions taken
+print(result["duration_seconds"]) # Time taken
 ```
 
-### 2. Command Line Script
+## Alternative Interfaces
+
+### Web Interface
+```bash
+python examples/web_interface/app.py
+# Then open http://localhost:8000
+```
+
+### Command Line
 ```bash
 python examples/cli.py "Your goal here"
 ```
 
-### 3. REST API Service
+### REST API
 ```bash
 python examples/service.py
-```
-
-Then send requests to the service:
-```bash
+# Then use:
 curl -X POST http://localhost:8000/navigate \
   -H "Content-Type: application/json" \
-  -d '{"goal": "Your goal here", "secrets": "optional credentials"}'
+  -d '{"goal": "Your goal here"}'
 ```
 
-### Supported Actions
+## Supported Actions
 
 The agent can perform these actions:
 - `navigate`: Go to a specific URL
@@ -76,58 +124,10 @@ The agent can perform these actions:
 - `wait`: Pause execution
 - `finished`: Complete the goal
 
-### Example Usage
-
-Here's how to use the web agent library in your code:
-
-```python
-from web_agent import navigate_with_ai
-
-# Simple navigation
-result = navigate_with_ai("Navigate to example.com and click the login button")
-
-# Navigation with credentials
-result = navigate_with_ai(
-    goal="Log in to example.com",
-    secrets={
-        "username": "your_username",
-        "password": "your_password"
-    }
-)
-```
-
-### Configuration
-
-You can configure the agent's behavior through environment variables or when initializing the agent:
-
-```python
-from web_agent import navigate_with_ai, WebAgentConfig
-
-config = WebAgentConfig(
-    debug=True,
-    timeout=30,
-    headless=False
-)
-
-result = navigate_with_ai("Your goal", config=config)
-```
-
-### Logging
-
-Logs are generated to help you understand the agent's decisions and actions. You can find logs in the `logs/` directory.
-
-### Extending the Agent
-
-The agent's capabilities can be extended by adding new actions or improving existing ones. To add a new action:
-
-1. Define the action in `src/web_agent/models/schemas.py`
-2. Implement the action logic in `src/web_agent/ai/coordinator.py`
-3. Update the main navigation loop to handle the new action
-
-### Contributing
+## Contributing
 
 Contributions are welcome! Please submit a pull request or open an issue to discuss your ideas.
 
-### License
+## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
