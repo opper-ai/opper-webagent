@@ -59,12 +59,6 @@ def print_status(action, details):
 result = run(
     # Describe your goal in natural language
     goal="Go to https://opper.ai and verify that there is a blog post covering DeepSeek-R1 there",
-
-    rewards=[
-        "Following output schema",
-        "Completed the task",
-        "Less than 5 steps"
-    ],
     
     # Provide credentials if needed
     secrets={
