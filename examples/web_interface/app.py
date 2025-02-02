@@ -13,7 +13,7 @@ root_dir = Path(__file__).parent.parent.parent
 sys.path.append(str(root_dir))
 sys.path.append(str(root_dir / 'src'))
 
-from web_agent import navigate_with_ai, get_status, stop
+from web_agent import run, get_status, stop
 
 app = Flask(__name__)
 
@@ -1300,10 +1300,9 @@ def stop_agent():
 def run_agent():
     data = request.json
     schema = json.loads(data['responseSchema']) if data['responseSchema'] else DEFAULT_SCHEMA
-    result = navigate_with_ai(
+    result = run(
         goal=data['goal'],
         secrets=data['secrets'] if data['secrets'] else None,
-        debug=False,
         response_schema=schema,
         status_callback=status_callback
     )

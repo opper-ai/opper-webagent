@@ -1,6 +1,8 @@
 from playwright.sync_api import sync_playwright
 import os
 import atexit
+import logging
+from .screenshot import set_page_zoom
 
 def setup_browser(session_dir="./browser_data", headless=False, remote_debugging_port=None):
     """Set up and configure the browser instance with persistence"""
@@ -24,8 +26,7 @@ def setup_browser(session_dir="./browser_data", headless=False, remote_debugging
     )
     page = context.new_page()
 
-    # Import here to avoid circular dependency
-    from .interaction import set_page_zoom
+    # Set initial zoom level
     set_page_zoom(page, 1)
 
     # Save storage on exit

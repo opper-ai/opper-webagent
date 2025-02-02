@@ -16,7 +16,7 @@ root_dir = Path(__file__).parent.parent.parent
 sys.path.append(str(root_dir))
 sys.path.append(str(root_dir / 'src'))
 
-from web_agent import navigate_with_ai, get_status, stop
+from web_agent import run, get_status, stop
 
 console = Console()
 
@@ -137,7 +137,7 @@ def main():
         ))
 
         if Confirm.ask("\n[cyan]Proceed with the task?[/cyan]", default=True):
-            result = navigate_with_ai(
+            result = run(
                 task,
                 headless=headless,
                 response_schema=response_schema,
