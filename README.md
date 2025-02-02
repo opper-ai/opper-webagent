@@ -49,28 +49,28 @@ pip install -r requirements.txt
 The web agent can be used directly in your Python code:
 
 ```python
-from web_agent import navigate_with_ai
+from web_agent import run
 
 # Define a callback for monitoring progress
 def print_status(action, details):
     print(f"Status: {action} - {details}")
 
 # Example: Scrape product information with authentication
-result = navigate_with_ai(
+result = run(
     # Describe your goal in natural language
-    goal="Go to linkedin and verify that the opper ai account has a post on Deepseek",
+    goal="Go to https://opper.ai and verify that there is a blog post covering DeepSeek-R1 there",
+
+    rewards=[
+        "Following output schema",
+        "Completed the task",
+        "Less than 5 steps"
+    ],
     
     # Provide credentials if needed
     secrets={
         "username": "your_username",
         "password": "your_password"
     },
-    
-    # Choose browser visibility
-    headless=True,  # Set True to run in background
-    
-    # Enable debug mode for detailed logging
-    debug=False,
     
     # Define the structure of the data you want
     response_schema={
