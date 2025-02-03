@@ -60,9 +60,13 @@ def attempt(page, browser, goal, subgoal, trajectory, response_schema):
     
     # Produce an observation of the current page
     result = get_page_observation(subgoal, trajectory, screenshot_path)
+    trajectory.append({
+        "action": "observation", 
+        "result": result.observation if result else "Failed to get observation"
+        })        
     
     # Given the page, decide what to do
-    decision = reflect_on_progress(goal, page.url, trajectory, result)
+    decision = reflect_on_progress(goal, page.url, trajectory)
     _status_manager.update("reflection", decision.reflection, screenshot_path)
 
     if decision.decision == "finished":
@@ -83,7 +87,19 @@ def attempt(page, browser, goal, subgoal, trajectory, response_schema):
 
     elif decision.decision == "break":
         _status_manager.update("breaking", decision.param, screenshot_path)
-        return "break", decision.param
+        completed_result = decision.param
+        
+        if response_schema:
+            try:
+                final_response = bake_response(completed_result, response_schema)
+                completed_result = final_response
+            except Exception as e:
+                completed_result = {
+                    "error": "Failed to validate response against schema", 
+                    "original_response": completed_result,
+                    "validation_error": str(e)
+                }
+        return "break", completed_result
 
     elif decision.decision == "continue":
         # Construct an action of what to do next
@@ -174,9 +190,9 @@ def attempt(page, browser, goal, subgoal, trajectory, response_schema):
             })
 
         elif action.action == "wait":
-            _status_manager.update("waiting", "Waiting for 10 seconds", screenshot_path)
-            time.sleep(10)
-            result = "Waited 10 seconds"
+            _status_manager.update("waiting", "Waiting for 5 seconds", screenshot_path)
+            time.sleep(5)
+            result = "Waited 5 seconds"
             trajectory.append({
                 "action_goal": action.action_goal, 
                 "action": "wait", 
@@ -234,6 +250,10 @@ def run(
     # Setup browser session
     _status_manager.update("setup", "Initializing browser")
     playwright, browser, page = setup_browser(headless=headless)
+    trajectory.append(
+        {"action": "setup", 
+         "result": "Opened up an empty browser window"
+         })
     
     # Execute navigation loop
     try:

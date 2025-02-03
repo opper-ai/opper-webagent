@@ -797,11 +797,11 @@ def index():
                     <i class="ri-article-line"></i>
                     Verify A Social Post
                 </button>
-                <button class="example-task" data-task="Go to Hackernews and extract the latest news about artificial intelligence from the past 24 hours">
+                <button class="example-task" data-task="What are the top 5 articles on Hackernews?">
                     <i class="ri-newspaper-line"></i>
                     Extract Latest News
                 </button>
-                <button class="example-task" data-task="Log into Meetup.com, find any AI meetups in Stockholm and register.">
+                <button class="example-task" data-task="Log into Meetup.com, find any AI meetups in Stockholm and register for the event.">
                     <i class="ri-window-line"></i>
                     Perform SaaS Task
                 </button>

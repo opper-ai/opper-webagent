@@ -6,10 +6,10 @@ This project implements an AI-powered web navigation agent built to autonomously
 
 - **Set Goal with Natural Language**: Simply describe what you want the agent to do with a web browser
 - **Headless Operation**: Run invisibly in the background or watch the agent work with browser visibility
+- ** Structured Completion Output**: Define JSON schemas to format the extracted data exactly how want it to make it easy to programmatically parse agent runs. 
+- **Callback for monitoring progress**: Monitor the agent's progress through a callback function
 - **Pass Authentication details**: Pass login credentials and sensitive data for authenticated sessions
-- **Real-time Status Updates**: Monitor the agent's progress through a callback function
-- **Structured Completion Output**: Define JSON schemas to format the extracted data exactly how want it. 
-- **Example Interfaces**: Use through Python API, web interface, CLI, or REST API
+- **Example Interfaces**: Use through Python API, web interface, CLI.
 
 ## About the Agent
 
@@ -53,7 +53,7 @@ from web_agent import run
 
 # Define a callback for monitoring progress
 def print_status(action, details):
-    print(f"Status: {action} - {details}")
+    print(f"{action}: {details}")
 
 # Example: Scrape product information with authentication
 result = run(
@@ -61,17 +61,14 @@ result = run(
     goal="Go to https://opper.ai and verify that there is a blog post covering DeepSeek-R1 there",
     
     # Provide credentials if needed
-    secrets={
-        "username": "your_username",
-        "password": "your_password"
-    },
+    secrets=None
     
     # Define the structure of the data you want
     response_schema={
         "type": "object",
         "properties": {
             "is_posted": {"type": "boolean"},
-            "post_content": {"type": "string"}
+            "post_title": {"type": "string"}
         }
     },
     
@@ -80,32 +77,49 @@ result = run(
 )
 
 # Access the results
-print(result["result"].get("is_posted"))  # True / False
-print(result["trajectory"])       # List of actions taken
-print(result["duration_seconds"]) # Time taken
+print(result["result") 
+```
+
+Will yeild something like where it continous to print status updates until the goal is reached:
+
+```python
+starting: Go to https://opper.ai and verify that there is a blog post covering DeepSeek-R1 there
+setup: Initializing browser
+reflecting: Initialized successfully, ready to start navigation
+navigating: Going to https://opper.ai
+looking: Analyzing page content
+reflecting: On homepage, need to find blog section
+clicking: Clicking on "Blog" link
+looking: Scanning blog posts
+reflecting: In blog section, searching for DeepSeek-R1 post
+finished: Found DeepSeek-R1 blog post
+cleanup: Done with task, closing browser
+
+{
+    "is_posted": True,
+    "post_title": "DeepSeek-R1 and Mistral Tiny"
+}
 ```
 
 ## Alternative Interfaces
 
 ### Web Interface
+
+Runs a web interface on localhost:5000 where you can enter your goal and see the agent work:
+
 ```bash
 python examples/web_interface/app.py
-# Then open http://localhost:8000
+# Then open http://localhost:5000
 ```
 
 ### Command Line
+
+Runs a command line interface where you can enter your goal and see the agent work:
+
 ```bash
-python examples/cli.py "Your goal here"
+python examples/console_interface/app.py
 ```
 
-### REST API
-```bash
-python examples/service.py
-# Then use:
-curl -X POST http://localhost:8000/navigate \
-  -H "Content-Type: application/json" \
-  -d '{"goal": "Your goal here"}'
-```
 
 ## Supported Actions
 
