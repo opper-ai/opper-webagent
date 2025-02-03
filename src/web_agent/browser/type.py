@@ -1,11 +1,12 @@
 from ..models import ActionResult
 
-def type_text(page, text):
+
+async def type_text(page, text):
     """Type text and press Enter and Tab."""
     try:
-        page.keyboard.type(text)
-        page.keyboard.press('Enter')
-        page.keyboard.press('Tab')
+        await page.keyboard.type(text)
+        await page.keyboard.press("Enter")
+        await page.keyboard.press("Tab")
         return ActionResult(success=True, output=f"Typed: {text}")
     except Exception as e:
-        return ActionResult(success=False, error=str(e)) 
+        return ActionResult(success=False, error=str(e))

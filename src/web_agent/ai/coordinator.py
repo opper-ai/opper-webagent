@@ -1,16 +1,17 @@
+import logging
+
 from opperai import Opper
 from opperai.types import CallConfiguration, ImageInput
-from ..models import Action, Reflection, ActionResult, ScreenOutput, RelevantInteraction
-import logging
-from pydantic import create_model
+
+from ..models import Action, Reflection, ScreenOutput
 
 opper = Opper()
 
-def get_page_observation(goal, trajectory, screenshot_path, debug: bool = False):
 
-    if trajectory: 
+def get_page_observation(goal, trajectory, screenshot_path, debug: bool = False):
+    if trajectory:
         last_action = trajectory[-1]
-    else: 
+    else:
         last_action = "No action"
 
     instruction = f"""Given a page screenshot of the current page as part of the process of reaching the goal `{goal}`.
@@ -31,6 +32,7 @@ def get_page_observation(goal, trajectory, screenshot_path, debug: bool = False)
         logging.error(f"Failed to analyze page: {str(e)}")
         return "Failed to analyze screenshot"
 
+
 def reflect_on_progress(goal, current_url, trajectory, current_view):
     instruction = """Given the goal, the content of the current page and the trajectory of what you have attempted, decide on weather to continue working towards the goal. Once you have fully completed the goal, you can decide to complete the task with finish. If you are repeatedly failing to complete the goal, you can decide to break.
 
@@ -40,15 +42,15 @@ def reflect_on_progress(goal, current_url, trajectory, current_view):
     * If you have repeated the same action multiple times without success, you may break the task
     * The finish decision should be used when you have fully met the goal. Provide all the necessary details as params.
     """
-    
+
     subgoal, _ = opper.call(
         name="reflect_on_progress",
         instructions=instruction,
         input={
             "goal": goal,
             "trajectory": trajectory[-10:],
-            "current_url": current_url, 
-            "current_page": current_view.observation
+            "current_url": current_url,
+            "current_page": current_view.observation,
         },
         model="fireworks/deepseek-v3",
         output_type=Reflection,
@@ -56,8 +58,8 @@ def reflect_on_progress(goal, current_url, trajectory, current_view):
     )
     return subgoal
 
+
 def decide_next_action(subgoal, current_url, trajectory, current_view):
-    
     instruction = """You are an agent in control of a browser and you are tasked to decide the next action towards a subgoal.
     
     Your task is to decide the next step to take on the page. 
@@ -97,9 +99,10 @@ def decide_next_action(subgoal, current_url, trajectory, current_view):
     )
     return action
 
-def look_at_page_content(page, action_goal):
+
+async def look_at_page_content(page, action_goal):
     try:
-        text_content = page.evaluate("() => document.body.innerText")
+        text_content = await page.evaluate("() => document.body.innerText")
         result, _ = opper.call(
             name="parse_page_content",
             instructions="Given a pages text content and a goal, extract the relevant information",
@@ -110,8 +113,9 @@ def look_at_page_content(page, action_goal):
         )
     except Exception as e:
         result = f"Looking at page content failed: {str(e)}"
-    
-    return result 
+
+    return result
+
 
 def bake_response(raw_response: str, response_model):
     """Structure and validate a raw response according to a provided schema model."""
@@ -128,4 +132,4 @@ def bake_response(raw_response: str, response_model):
         )
         return result
     except Exception as e:
-        raise ValueError(f"Failed to validate response: {str(e)}") 
+        raise ValueError(f"Failed to validate response: {str(e)}")
