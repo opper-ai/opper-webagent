@@ -3,10 +3,11 @@ from opperai.types import CallConfiguration
 
 opper = Opper()
 
-def look_at_page_content(page, action_goal):
+
+async def look_at_page_content(page, action_goal):
     """Extract and analyze relevant information from the page content."""
     try:
-        text_content = page.evaluate("() => document.body.innerText")
+        text_content = await page.evaluate("() => document.body.innerText")
         result, _ = opper.call(
             name="parse_page_content",
             instructions="Given a pages text content and a goal, extract the relevant information",
@@ -17,5 +18,5 @@ def look_at_page_content(page, action_goal):
         )
     except Exception as e:
         result = f"Looking at page content failed: {str(e)}"
-    
-    return result 
+
+    return result

@@ -1,16 +1,19 @@
 from ..models import ActionResult
 
-def click_at_coordinates(page, x, y):
+
+async def click_at_coordinates(page, x, y):
     """Click at specific coordinates on the page."""
     try:
-        page.mouse.click(x, y)
+        await page.mouse.click(x, y)
         return ActionResult(success=True, output=f"Clicked at ({x}, y)")
     except Exception as e:
         return ActionResult(success=False, error=str(e))
 
-def draw_click_dot(page, x, y):
+
+async def draw_click_dot(page, x, y):
     """Draw a temporary visual indicator where a click occurred."""
-    page.evaluate("""([x, y]) => {
+    await page.evaluate(
+        """([x, y]) => {
         const dot = document.createElement('div');
         dot.style.position = 'absolute';
         dot.style.left = x + 'px';
@@ -25,4 +28,6 @@ def draw_click_dot(page, x, y):
         dot.style.zIndex = '9999';
         document.body.appendChild(dot);
         setTimeout(() => dot.remove(), 2500);
-    }""", [x, y]) 
+    }""",
+        [x, y],
+    )

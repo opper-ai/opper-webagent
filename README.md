@@ -61,7 +61,7 @@ result = run(
     goal="Go to https://opper.ai and verify that there is a blog post covering DeepSeek-R1 there",
     
     # Provide credentials if needed
-    secrets=None
+    secrets=None,
     
     # Define the structure of the data you want
     response_schema={
@@ -77,7 +77,7 @@ result = run(
 )
 
 # Access the results
-print(result["result") 
+print(result["result"])
 ```
 
 Will yeild something like where it continous to print status updates until the goal is reached:
