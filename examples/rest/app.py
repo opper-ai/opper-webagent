@@ -5,9 +5,10 @@ import os
 import sys
 import uuid
 from pathlib import Path
-from typing import Dict, Optional
+from queue import Queue
+from typing import Optional
 
-from fastapi import FastAPI
+from fastapi import BackgroundTasks, FastAPI
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
@@ -19,6 +20,9 @@ sys.path.append(str(root_dir))
 sys.path.append(str(root_dir / "src"))
 
 app = FastAPI()
+
+# Store active sessions and their status
+status_queues = {}
 
 # Default response schema
 DEFAULT_SCHEMA = {
@@ -37,9 +41,6 @@ DEFAULT_SCHEMA = {
     "required": ["status", "message"],
 }
 
-# Store active sessions and their status
-active_sessions: Dict[str, dict] = {}
-
 
 # Request/Response models
 class RunRequest(BaseModel):
@@ -48,17 +49,10 @@ class RunRequest(BaseModel):
     responseSchema: Optional[dict] = None
 
 
-def get_status(session_id: str = None) -> dict:
-    """Get status for a specific session"""
-    if session_id is None:
-        return {}
-    return active_sessions.get(session_id, {})
-
-
 def stop(session_id: str = None) -> None:
     """Stop a specific session"""
-    if session_id and session_id in active_sessions:
-        active_sessions.pop(session_id, None)
+    if session_id and session_id in status_queues:
+        status_queues.pop(session_id, None)
 
 
 def status_callback(
@@ -80,29 +74,27 @@ def status_callback(
     }
 
     if session_id:
-        active_sessions[session_id] = status_update
+        status_queues[session_id].put(status_update)
 
 
 async def status_stream_generator(session_id: str):
     """Generate status stream events"""
+    if session_id not in status_queues:
+        return
+
+    queue = status_queues[session_id]
+
     while True:
         try:
-            status = get_status(session_id)
-            if not status:
+            if not queue.empty():
+                status = queue.get()
+                yield f"data: {json.dumps(status)}\n\n".encode("utf-8")
+                if status.get("action") in ["completed", "error"]:
+                    break
+            else:
                 # Send keep-alive every second if no updates
                 await asyncio.sleep(1)
                 yield b'data: {"action": null, "details": null}\n\n'
-                continue
-
-            yield f"data: {json.dumps(status)}\n\n".encode("utf-8")
-
-            # Clear status after sending
-            if session_id in active_sessions:
-                active_sessions[session_id] = {}
-
-            # If task is complete, end stream
-            if status.get("action") == "cleanup":
-                return
 
         except Exception as e:
             print(f"error in status stream: {str(e)}")
@@ -115,13 +107,6 @@ async def status_stream(session_id: str):
     return StreamingResponse(
         status_stream_generator(session_id), media_type="text/event-stream"
     )
-
-
-@app.get("/status/{session_id}")
-async def get_current_status(session_id: str):
-    """Get current status"""
-    status = get_status(session_id)
-    return JSONResponse(status)
 
 
 @app.patch("/stop/{session_id}")
@@ -146,22 +131,38 @@ async def _run_agent(session_id: str, request: RunRequest):
     callback = session_callback(session_id)
     callback("initializing", "starting task")
 
-    await WebAgent().run(
-        goal=request.goal,
-        secrets=request.secrets,
-        response_schema=schema,
-        status_callback=callback,
-        session_id=session_id,
-    )
+    try:
+        result = await WebAgent().run(
+            goal=request.goal,
+            secrets=request.secrets,
+            response_schema=schema,
+            status_callback=callback,
+            session_id=session_id,
+        )
+        if session_id in status_queues:
+            status_queues[session_id].put(
+                {"action": "completed", "details": "Task completed", "result": result}
+            )
+        return result
+    except Exception as e:
+        if session_id in status_queues:
+            status_queues[session_id].put(
+                {"action": "error", "details": f"Task failed: {str(e)}"}
+            )
+        raise
+    finally:
+        status_queues.pop(session_id, None)
 
 
 @app.post("/run")
-async def run_agent(request: RunRequest):
+async def run_agent(request: RunRequest, background_tasks: BackgroundTasks):
     """Start a new agent run"""
     # Generate a new session ID
     session_id = str(uuid.uuid4())
 
-    asyncio.create_task(_run_agent(session_id, request))
+    status_queues[session_id] = Queue()
+
+    background_tasks.add_task(_run_agent, session_id, request)
 
     return JSONResponse({"session_id": session_id, "result": "task started"})
 
@@ -182,7 +183,7 @@ async def get_agent_info():
                 "look",
                 "wait",
             ],
-            "status": {"active_sessions": len(active_sessions), "available": True},
+            "status": {"active_sessions": len(status_queues), "available": True},
         }
     )
 
