@@ -1,36 +1,42 @@
-# Scriptable AI-Powered Compound Web Agent
+# Opperator
 
-This project implements an AI-powered web navigation agent built to autonomously and headlessly browse websites to accomplish tasks such as scraping data, automating form submissions, and more. It is focused on being scriptable and implemented as a backend service, but examples exists to build interfaces around it. It is a compound agent in that it uses specific models for different parts of the agents tasks.
+## A scriptable compound AI web agent that headlessly and autonomously executes tasks on the web
 
-## Features
+🌐 We built Opperator as a proof of concept for a new class of AI agents that can run headlessly and autonomously, focusing on automating tasks on the web.
 
-- **Set Goal with Natural Language**: Simply describe what you want the agent to do with a web browser
-- **Headless Operation**: Run invisibly in the background or watch the agent work with browser visibility
-- ** Structured Completion Output**: Define JSON schemas to format the extracted data exactly how want it to make it easy to programmatically parse agent runs. 
-- **Callback for monitoring progress**: Monitor the agent's progress through a callback function
-- **Pass Authentication details**: Pass login credentials and sensitive data for authenticated sessions
-- **Example Interfaces**: Use through Python API, web interface, CLI.
+## What Makes It Special
 
-## About the Agent
+- 🎯 **Specify web task in natural language**: Simply tell it what you want - no complex configuration needed
+- 🤖 **Have it run headlessly in the background**: Run silently in the background or watch the magic happen in real-time
+- 📊 **Built to be operated from code**: Get results in precisely formatted JSON that that you can work with in code
+- 🔄 **Get feedback on agent progress**: Specify a callback to monitor every step of the agents progress to build powerful interfaces.
+- 🔐 **Pass authentication details**: Safely pass login credentials and sensitive data
 
-The agent is powered by the Opper API and the Opper AI platform to access models, perform tracing and more. The agent is a so called compound agent that utilizes specific models for different tasks.
+## Under the Hood
 
-* Molmo for interpreting images and finding where to click
-* Deepseek V3 for reflection, reasoning and planning
-* Mistral Large for determining and specifying actions
+The agent is a so called compound AI agent in that it utilizes differnt models for different parts of its subtasks. It accesses these models via the Opper AI platform: 
 
-The agent can perform the following actions:
-* `navigate`: Go to a specific URL
-* `look`: Analyze page content
-* `click`: Click at specific coordinates
-* `type`: Enter text in forms 
-* `scroll_down`/`scroll_up`: Scroll the page
-* `wait`: Pause execution
-* `finished`: Finish the goal with structured output results
+- 🔍 **Molmo**: An open source model specialized for visual analysis and web element detection
+- 🤔 **Deepseek V3**: A large language model specialized for strategic reasoning and planning
+- 🎯 **Mistral Large**: A large language model specialized for action determination and execution
+
+### Available Actions
+
+The agent will autonomously reason its way through the task and may perform the following actions:
+
+| Action | Description |
+|--------|-------------|
+| `navigate` | Visit any URL |
+| `look` | Analyze page content |
+| `click` | Interact with elements |
+| `type` | Fill out forms |
+| `scroll_down`/`scroll_up` | Navigate pages |
+| `wait` | Handle loading states |
+| `finished` | Complete with structured output |
 
 ## Installation
 
-First sign up to Opper at https://opper.ai/ and create an API key to access models, tracing and more. Opper free tier allows for $10 of free credits to get started.
+First sign up to Opper at https://opper.ai/ and create an API key to access models, tracing and more. **The Opper free tier allows for $10 of free credits for inference and tracing.** 
 
 Export the API key as an environment variable:
 
@@ -44,7 +50,7 @@ Then install the required packages:
 pip install -r requirements.txt
 ```
 
-## Quick Start (use as a library)
+## Use as a library
 
 The web agent can be used directly in your Python code:
 
@@ -57,13 +63,14 @@ def print_status(action, details):
 
 # Example: Scrape product information with authentication
 result = run(
+
     # Describe your goal in natural language
     goal="Go to https://opper.ai and verify that there is a blog post covering DeepSeek-R1 there",
     
     # Provide credentials if needed
     secrets=None,
     
-    # Define the structure of the data you want
+    # Define response schema using JSON Schema specification (see https://json-schema.org)
     response_schema={
         "type": "object",
         "properties": {
@@ -72,7 +79,7 @@ result = run(
         }
     },
     
-    # Monitor the agent's progress
+    # Optionally provide a callback to monitor the agent's progress
     status_callback=print_status
 )
 
@@ -80,7 +87,7 @@ result = run(
 print(result["result"])
 ```
 
-Will yeild something like where it continous to print status updates until the goal is reached:
+Running this will yield something like the following where it continously print status updates until the goal is reached:
 
 ```python
 starting: Go to https://opper.ai and verify that there is a blog post covering DeepSeek-R1 there
@@ -101,27 +108,59 @@ cleanup: Done with task, closing browser
 }
 ```
 
-## Docker
+## Use Docker container
 
 Build the docker image:
 
 ```bash
-docker build -t opper-web-agent .
+docker build -t opperator .
 ```
 
 Run the docker container and expose port 8000:
 
-*Note: You need to set the OPPER_API_KEY environment variable.*
+*Note: Remember to get an API key from Opper*
 
 ```bash
-docker run -p 8000:8000 -e OPPER_API_KEY=<your-api-key> opper-web-agent
+docker run -p 8000:8000 -e OPPER_API_KEY=<your-api-key> opperator
+```
+
+By default, this will start a REST API server on port 8000. You can interact with it using HTTP requests:
+
+```bash
+# Example: Run a web agent task
+curl -X POST http://localhost:8000/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "goal": "Go to https://opper.ai and check the pricing",
+    "response_schema": {
+      "type": "object",
+      "properties": {
+        "has_free_tier": {"type": "boolean"},
+        "pricing_details": {"type": "string"}
+      }
+    }
+  }'
+```
+
+You can also stream status updates using:
+
+```bash
+curl -N http://localhost:8000/status-stream/<session_id>
+```
+
+This will stream real-time updates in Server-Sent Events (SSE) format:
+
+```bash
+data: {"action": "initializing", "details": "starting task"}
+data: {"action": "navigating", "details": "Going to https://opper.ai"}
+...etc
 ```
 
 ## Alternative Interfaces
 
 ### Web Interface
 
-Runs a web interface on localhost:8000 where you can enter your goal and see the agent work:
+We also built a simple proof of concept web interface that you can use to invoke tasks with the agent:
 
 ```bash
 pip install -r examples/web_interface/requirements.txt
@@ -132,7 +171,7 @@ python examples/web_interface/app.py
 
 ### Command Line
 
-Runs a command line interface where you can enter your goal and see the agent work:
+As with the web interface, this command line interface is a proof of concept that you can use to invoke tasks with the agent:
 
 ```bash
 pip install -r examples/console_interface/requirements.txt
