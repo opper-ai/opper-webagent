@@ -31,6 +31,7 @@ RUN pip install --no-cache-dir .
 ENV PYTHONPATH=/app
 ENV CHROME_PATH=/usr/bin/chromium
 ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
+ENV PYTHONUNBUFFERED=1
 
 # Define OPPER_API_KEY as a build argument and environment variable
 ARG OPPER_API_KEY
