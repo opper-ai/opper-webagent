@@ -6,7 +6,7 @@ import sys
 import uuid
 from pathlib import Path
 from queue import Queue
-from typing import Optional
+from typing import Dict, Optional
 
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -22,7 +22,7 @@ sys.path.append(str(root_dir / "src"))
 app = FastAPI()
 
 # Store active sessions and their status
-status_queues = {}
+status_queues: Dict[str, Queue] = {}
 
 # Default response schema
 DEFAULT_SCHEMA = {
