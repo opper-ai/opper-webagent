@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Headless Web Automator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #111827;
+            color: #e5e7eb;
+            line-height: 1.6;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 27%;
+            background-color: #1f2937;
+            box-shadow: 2px 0 6px rgba(0, 0, 0, 0.2);
+            height: 100vh;
+            box-sizing: border-box;
+            position: fixed;
+            left: 0;
+            top: 0;
+            border-right: 1px solid #374151;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.active {
+            transform: translateX(0);
+        }
+
+        .main-content {
+            width: 100%;
+            margin-left: 0;
+            padding: 32px;
+            box-sizing: border-box;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+            transition: margin-left 0.3s ease, width 0.3s ease;
+        }
+
+        .main-content.sidebar-active {
+            width: 73%;
+            margin-left: 27%;
+        }
+
+        .centered-content {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: #111827;
+            z-index: 1000;
+        }
+
+        .centered-content.hidden {
+            display: none;
+        }
+
+        .logo-container {
+            margin-bottom: 24px;
+            text-align: center;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .logo-title {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #e5e7eb;
+            margin: 0;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-subtitle {
+            font-size: 1.2rem;
+            color: #9ca3af;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .example-tasks {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            justify-content: center;
+            animation: fadeInDown 0.4s ease-out;
+        }
+
+        .example-task {
+            background: #374151;
+            border: 1px solid #4B5563;
+            border-radius: 8px;
+            padding: 10px 16px;
+            color: #e5e7eb;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .example-task:hover {
+            background: #4B5563;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .example-task i {
+            font-size: 1rem;
+            color: #10B981;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #e5e7eb;
+            font-size: 0.95rem;
+            letter-spacing: 0.01em;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #374151;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            background-color: #111827;
+            color: #e5e7eb;
+            resize: none;
+            line-height: 1.5;
+            min-height: 80px;
+        }
+
+        textarea::placeholder {
+            color: #6B7280;
+        }
+
+        .advanced-options {
+            background: #111827;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #374151;
+        }
+
+        .advanced-options summary {
+            color: #9CA3AF;
+            cursor: pointer;
+            font-weight: 500;
+            user-select: none;
+            padding: 8px;
+            margin: -8px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .advanced-options summary::before {
+            content: '';
+            width: 20px;
+            height: 20px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 5l7 7-7 7'%3E%3C/path%3E%3C/svg%3E");
+            background-size: contain;
+            transform: rotate(90deg);
+            transition: transform 0.2s ease;
+        }
+
+        .advanced-options[open] summary::before {
+            transform: rotate(270deg);
+        }
+
+        .advanced-options summary:hover {
+            background: rgba(75, 85, 99, 0.3);
+        }
+
+        .advanced-options-content {
+            margin-top: 16px;
+            display: grid;
+            gap: 20px;
+            padding: 4px;
+        }
+
+        .advanced-options-content .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        button[type="submit"] {
+            background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
+            color: white;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            margin-top: 8px;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .main-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: none;
+        }
+
+        .main-container.active {
+            display: block;
+        }
+
+        .browser-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 0;
+        }
+
+        .browser-window {
+            background: #1f2937;
+            border-radius: 12px;
+            border: 1px solid #374151;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            width: fit-content;
+            max-width: 90%;
+            margin: 0 auto;
+        }
+
+        .browser-header {
+            background: #111827;
+            padding: 8px 12px;
+            border-bottom: 1px solid #374151;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .browser-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .browser-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .browser-dot.red {
+            background-color: #ef4444;
+        }
+
+        .browser-dot.yellow {
+            background-color: #f59e0b;
+        }
+
+        .browser-dot.green {
+            background-color: #10b981;
+        }
+
+        .browser-content {
+            background: #111827;
+            position: relative;
+            min-height: 200px;
+        }
+
+        .screenshot-container {
+            margin: 0;
+            background-color: transparent;
+            border: none;
+            border-radius: 0;
+            position: relative;
+            min-height: 200px;
+        }
+
+        .screenshot-container.loading::after {
+            content: 'Loading...';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #e5e7eb;
+            background-color: rgba(31, 41, 55, 0.8);
+            padding: 8px 16px;
+            border-radius: 4px;
+            z-index: 2;
+        }
+
+        .screenshot-container img {
+            display: block;
+            width: 100%;
+            height: auto;
+            margin: 0;
+        }
+
+        .status-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 53px);
+        }
+
+        .status-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            padding: 16px;
+            border-bottom: 1px solid #374151;
+            background: #1f2937;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .status-title {
+            color: #e5e7eb;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .cancel-button {
+            background: #ef4444;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .cancel-button:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .cancel-button i {
+            font-size: 0.875rem;
+        }
+
+        .status-log {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #111827;
+        }
+
+        .status-entry {
+            padding: 12px 16px;
+            background: #1f2937;
+            border-radius: 8px;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            word-break: break-word;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .status-entry.latest {
+            border-color: #10B981;
+            background: rgba(16, 185, 129, 0.1);
+            animation: slideIn 0.3s ease, pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .status-tag {
+            font-size: 0.75rem;
+            font-weight: 600;
+            opacity: 0.7;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .status-details {
+            color: inherit;
+            font-size: 0.9rem;
+        }
+
+        .new-task-button {
+            background: #10B981;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .new-task-button:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .status-entry.result {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid #10B981;
+        }
+
+        #formContent {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="centered-content" id="centeredContent">
+        <div class="logo-container">
+            <h1 class="logo-title">Web Automation with AI</h1>
+            <p class="logo-subtitle">Powered by headless, open source agent framework by Opper</p>
+        </div>
+        <div class="example-tasks">
+            <button class="example-task"
+                data-task="Go to our company blog at https://opper.ai/blog and verify that our latest post about Deepseek is published">
+                <i class="ri-article-line"></i>
+                Verify A Social Post
+            </button>
+            <button class="example-task" data-task="What are the top 5 articles on Hackernews?">
+                <i class="ri-newspaper-line"></i>
+                Extract Latest News
+            </button>
+            <button class="example-task"
+                data-task="Log into Meetup.com, find any AI meetups in Stockholm and register for the event.">
+                <i class="ri-window-line"></i>
+                Perform SaaS Task
+            </button>
+        </div>
+        <div class="centered-form">
+            <form id="agentForm">
+                <div class="form-group">
+                    <label for="goal">What would you like the agent to do?</label>
+                    <textarea id="goal" name="goal" rows="3" required
+                        placeholder="Describe your task in natural language, e.g., 'Go to LinkedIn and find posts about AI'"></textarea>
+                </div>
+                <details class="advanced-options">
+                    <summary>Advanced options</summary>
+                    <div class="advanced-options-content">
+                        <div class="form-group">
+                            <label for="secrets">Authentication Details</label>
+                            <textarea id="secrets" name="secrets" rows="2"
+                                placeholder="Optional: Enter login credentials if needed for the task"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="responseSchema">Custom Response Schema</label>
+                            <textarea id="responseSchema" name="responseSchema" rows="4"
+                                placeholder="Optional: Specify a JSON schema for structured output"></textarea>
+                        </div>
+                    </div>
+                </details>
+                <button type="submit" id="runButton">Run Task</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="main-container" id="mainContainer">
+        <div class="sidebar" id="sidebar">
+            <div id="formContent">
+                <div class="status-header">
+                    <div class="status-title">Task Progress</div>
+                    <button class="cancel-button" id="statusButton">
+                        <i class="ri-close-circle-line"></i>
+                        Cancel
+                    </button>
+                </div>
+                <div class="status-container">
+                    <div id="status" class="status-log"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-content" id="mainContent">
+            <div class="browser-container" id="browserContainer">
+                <div class="browser-window">
+                    <div class="browser-header">
+                        <div class="browser-controls">
+                            <div class="browser-dot red"></div>
+                            <div class="browser-dot yellow"></div>
+                            <div class="browser-dot green"></div>
+                        </div>
+                    </div>
+                    <div class="browser-content">
+                        <div class="screenshot-container">
+                            <img id="latestScreenshot" src="" alt="Latest screenshot" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let screenshotInterval;
+        let isRunning = false;
+        let eventSource;
+        let startTime;
+        let latestScreenshotPath = null;
+        let sessionId = null;  // Track current session ID
+
+        function setupStatusStream() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            if (!sessionId) {
+                console.error('No session ID available');
+                return;
+            }
+
+            eventSource = new EventSource(`/status/${sessionId}`);
+            const statusDiv = document.getElementById('status');
+
+            eventSource.onmessage = function (event) {
+                const status = JSON.parse(event.data);
+
+                // Check for task completion
+                if (status.action === 'completed' || status.action === 'error') {
+                    if (status.result) {
+                        console.log('Task result:', status.result);
+                        // Add result to status log
+                        const resultUpdate = document.createElement('div');
+                        resultUpdate.className = 'status-entry latest result';
+                        resultUpdate.innerHTML = `
+                            <span class="status-tag">Result</span>
+                            <span class="status-details">${JSON.stringify(status.result, null, 2)}</span>
+                        `;
+                        statusDiv.appendChild(resultUpdate);
+                    }
+                    // Change Cancel button to "New Task"
+                    const statusButton = document.getElementById('statusButton');
+                    statusButton.className = 'new-task-button';
+                    statusButton.innerHTML = '<i class="ri-add-circle-line"></i>New Task';
+                    // Keep the current view, just update the button action
+                    statusButton.onclick = startNewTask;
+                }
+
+                // Remove 'latest' class from previous latest entry
+                const previousLatest = statusDiv.querySelector('.status-entry.latest');
+                if (previousLatest) {
+                    previousLatest.classList.remove('latest');
+                }
+
+                const statusUpdate = document.createElement('div');
+                statusUpdate.className = 'status-entry latest';
+                statusUpdate.innerHTML = `
+                    <span class="status-tag">${status.action}</span>
+                    <span class="status-details">${status.details || ''}</span>
+                `;
+                statusDiv.appendChild(statusUpdate);
+
+                // Update screenshot if we have new image data
+                if (status.screenshot_data) {
+                    const img = document.getElementById('latestScreenshot');
+                    img.onload = () => {
+                        img.style.display = 'block';
+                        img.parentElement.classList.remove('loading');
+                    };
+                    img.src = `data:image/png;base64,${status.screenshot_data}`;
+                }
+
+                // Auto-scroll to the latest update
+                statusUpdate.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            };
+
+            eventSource.onerror = function (error) {
+                console.error('EventSource failed:', error);
+                eventSource.close();
+            };
+        }
+
+        function stopTask() {
+            if (sessionId) {
+                fetch(`/stop/${sessionId}`, { method: 'POST' });
+            }
+            if (eventSource) {
+                eventSource.close();
+            }
+            startNewTask();
+        }
+
+        document.getElementById('agentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            startTime = new Date();
+            const form = e.target;
+            const statusLog = document.getElementById('status');
+            const browserContainer = document.getElementById('browserContainer');
+            const centeredContent = document.getElementById('centeredContent');
+            const mainContainer = document.getElementById('mainContainer');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+
+            // Reset status button to Cancel
+            const statusButton = document.getElementById('statusButton');
+            statusButton.className = 'cancel-button';
+            statusButton.innerHTML = '<i class="ri-close-circle-line"></i>Cancel';
+            statusButton.onclick = stopTask;
+
+            // Transition from centered to main view
+            centeredContent.classList.add('hidden');
+            mainContainer.classList.add('active');
+            sidebar.classList.add('active');
+            mainContent.classList.add('sidebar-active');
+
+            // Show status log
+            statusLog.classList.remove('hidden');
+            statusLog.innerHTML = ''; // Clear previous status
+
+            isRunning = true;
+
+            try {
+                const response = await fetch('/run', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        goal: form.goal.value,
+                        secrets: form.secrets.value,
+                        responseSchema: form.responseSchema.value,
+                    }),
+                });
+
+                const data = await response.json();
+                sessionId = data.session_id;  // Store the session ID
+
+                // Start status stream
+                setupStatusStream();
+
+            } catch (error) {
+                console.error('Error:', error);
+                statusLog.innerHTML += `
+                    <div class="status-entry error">
+                        <span class="status-tag">Error</span>
+                        <span class="status-details">${error.message}</span>
+                    </div>
+                `;
+            }
+        });
+
+        function startNewTask() {
+            // Reset session ID
+            sessionId = null;
+
+            // Reset the form to its initial state
+            const form = document.getElementById('agentForm');
+            if (form) {
+                form.reset();
+            }
+
+            // Hide the main container and show the centered content
+            document.getElementById('mainContainer').classList.remove('active');
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('mainContent').classList.remove('sidebar-active');
+            document.getElementById('centeredContent').classList.remove('hidden');
+
+            // Clear any previous status
+            document.getElementById('status').innerHTML = '';
+
+            // Reset screenshot
+            const screenshotImg = document.getElementById('latestScreenshot');
+            if (screenshotImg) {
+                screenshotImg.style.display = 'none';
+                screenshotImg.src = '';
+            }
+
+            // Show browser container again (for next run)
+            document.getElementById('browserContainer').style.display = 'flex';
+
+            // Reset any event source
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+
+            // Reset running state
+            isRunning = false;
+
+            // Reset the start time
+            startTime = null;
+
+            // Scroll to top of page
+            window.scrollTo(0, 0);
+        }
+
+        // Add example task functionality
+        document.querySelectorAll('.example-task').forEach(button => {
+            button.addEventListener('click', () => {
+                const taskText = button.getAttribute('data-task');
+                document.getElementById('goal').value = taskText;
+            });
+        });
+    </script>
+</body>
+
+</html>

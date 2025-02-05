@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import time
+import uuid
 from threading import Event
 from typing import Callable, Dict, List, Optional
 
@@ -273,8 +274,12 @@ class WebAgent:
         headless: bool = True,
         response_schema: Optional[Dict] = None,
         status_callback: Optional[Callable[[str, str], None]] = None,
+        session_id: Optional[str] = None,
     ) -> Dict:
         """Execute an AI-guided web navigation session."""
+
+        if not session_id:
+            session_id = str(uuid.uuid4())
 
         # Start playwright
 
