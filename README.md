@@ -44,7 +44,7 @@ Then install the required packages:
 pip install -r requirements.txt
 ```
 
-## Quick Start
+## Quick Start (use as a library)
 
 The web agent can be used directly in your Python code:
 
@@ -101,15 +101,33 @@ cleanup: Done with task, closing browser
 }
 ```
 
+## Docker
+
+Build the docker image:
+
+```bash
+docker build -t opper-web-agent .
+```
+
+Run the docker container and expose port 8000:
+
+*Note: You need to set the OPPER_API_KEY environment variable.*
+
+```bash
+docker run -p 8000:8000 -e OPPER_API_KEY=<your-api-key> opper-web-agent
+```
+
 ## Alternative Interfaces
 
 ### Web Interface
 
-Runs a web interface on localhost:5000 where you can enter your goal and see the agent work:
+Runs a web interface on localhost:8000 where you can enter your goal and see the agent work:
 
 ```bash
+pip install -r examples/web_interface/requirements.txt
+
 python examples/web_interface/app.py
-# Then open http://localhost:5000
+# Then open http://localhost:8000
 ```
 
 ### Command Line
@@ -117,20 +135,10 @@ python examples/web_interface/app.py
 Runs a command line interface where you can enter your goal and see the agent work:
 
 ```bash
+pip install -r examples/console_interface/requirements.txt
+
 python examples/console_interface/app.py
 ```
-
-
-## Supported Actions
-
-The agent can perform these actions:
-- `navigate`: Go to a specific URL
-- `look`: Analyze page content
-- `click`: Click at specific coordinates
-- `type`: Enter text and press Enter/Tab
-- `scroll_down`/`scroll_up`: Scroll the page
-- `wait`: Pause execution
-- `finished`: Complete the goal
 
 ## Contributing
 
