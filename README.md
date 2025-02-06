@@ -158,7 +158,7 @@ docker compose up --build
 2. Interact via HTTP requests:
 
 ```shell
-# Execute a web task
+# Execute a web task (returns session id)
 curl -X POST http://localhost:8000/run \
   -H "Content-Type: application/json" \
   -d '{
@@ -175,6 +175,8 @@ curl -X POST http://localhost:8000/run \
 # Stream status updates
 curl -N http://localhost:8000/status-stream/<session_id>
 ```
+
+API documentation available at `http://localhost:8000/docs`
 
 ### Alternative Interfaces
 
