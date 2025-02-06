@@ -127,7 +127,6 @@ async def _run_agent(session_id: str, request: RunRequest):
     schema = request.responseSchema if request.responseSchema else DEFAULT_SCHEMA
 
     callback = _get_session_callback(session_id)
-    callback("initializing", "starting task")
 
     try:
         result = await WebAgent().run(
@@ -137,6 +136,7 @@ async def _run_agent(session_id: str, request: RunRequest):
             status_callback=callback,
             session_id=session_id,
         )
+        print("done")
         if session_id in status_queues:
             status_queues[session_id].put(
                 {"action": "completed", "details": "Task completed", "result": result}

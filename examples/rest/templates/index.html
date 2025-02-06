@@ -615,8 +615,6 @@
                 if (status.action === 'completed' || status.action === 'error') {
                     isRunning = false;
 
-                    statusDiv.appendChild(completionUpdate);
-
                     if (status.result) {
                         console.log('Task result:', status.result);
                         // Add result to status log
