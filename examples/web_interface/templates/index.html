@@ -525,7 +525,18 @@
                         <div class="form-group">
                             <label for="responseSchema">Custom Response Schema</label>
                             <textarea id="responseSchema" name="responseSchema" rows="4"
-                                placeholder="Optional: Specify a JSON schema for structured output"></textarea>
+                                placeholder="Optional: Specify a JSON schema for structured output">{
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean"
+    },
+    "result": {
+      "type": "string"
+    }
+  },
+  "required": ["success", "result"]
+}</textarea>
                         </div>
                     </div>
                 </details>
@@ -595,23 +606,57 @@
 
                 // Check for task completion
                 if (status.action === 'completed' || status.action === 'error') {
+                    isRunning = false;
+                    
+                    statusDiv.appendChild(completionUpdate);
+
                     if (status.result) {
                         console.log('Task result:', status.result);
                         // Add result to status log
                         const resultUpdate = document.createElement('div');
-                        resultUpdate.className = 'status-entry latest result';
+                        resultUpdate.className = 'status-entry result';
+                        
+                        // Format the result value based on its type
+                        let formattedResult;
+                        const resultValue = status.result.result;  // Extract the result key
+                        
+                        if (typeof resultValue === 'object') {
+                            formattedResult = `<pre style="margin: 0; white-space: pre-wrap;">${JSON.stringify(resultValue, null, 2)}</pre>`;
+                        } else if (typeof resultValue === 'string' && resultValue.trim().startsWith('{')) {
+                            try {
+                                const jsonResult = JSON.parse(resultValue);
+                                formattedResult = `<pre style="margin: 0; white-space: pre-wrap;">${JSON.stringify(jsonResult, null, 2)}</pre>`;
+                            } catch {
+                                formattedResult = resultValue;
+                            }
+                        } else {
+                            formattedResult = resultValue;
+                        }
+                        
+                        // Format duration if available
+                        const duration = status.result.duration_seconds ? 
+                            `<div style="margin-top: 8px; font-size: 0.8rem; color: #9CA3AF;">
+                                Duration: ${status.result.duration_seconds.toFixed(2)} seconds
+                            </div>` : '';
+                        
                         resultUpdate.innerHTML = `
                             <span class="status-tag">Result</span>
-                            <span class="status-details">${JSON.stringify(status.result, null, 2)}</span>
+                            <span class="status-details">${formattedResult}</span>
+                            ${duration}
                         `;
                         statusDiv.appendChild(resultUpdate);
                     }
+                    
                     // Change Cancel button to "New Task"
                     const statusButton = document.getElementById('statusButton');
                     statusButton.className = 'new-task-button';
                     statusButton.innerHTML = '<i class="ri-add-circle-line"></i>New Task';
-                    // Keep the current view, just update the button action
                     statusButton.onclick = startNewTask;
+                    
+                    // Close the event source since we're done
+                    if (eventSource) {
+                        eventSource.close();
+                    }
                 }
 
                 // Remove 'latest' class from previous latest entry
@@ -688,19 +733,61 @@
             isRunning = true;
 
             try {
+                // Ensure we have valid JSON objects for both fields
+                let secrets = "";  // Initialize as empty string
+                let responseSchema = {
+                    type: "object",
+                    properties: {
+                        success: {
+                            type: "boolean",
+                            description: "Whether the task was successful"
+                        },
+                        result: {
+                            type: "string",
+                            description: "The result of the task"
+                        }
+                    },
+                    required: ["success", "result"]
+                };
+
+                // Try to parse secrets if not empty
+                if (form.secrets.value.trim()) {
+                    try {
+                        secrets = form.secrets.value.trim();  // Keep as string
+                    } catch (e) {
+                        throw new Error('Invalid JSON format in Authentication Details');
+                    }
+                }
+
+                // Try to parse response schema if not empty
+                if (form.responseSchema.value.trim()) {
+                    try {
+                        responseSchema = JSON.parse(form.responseSchema.value);
+                    } catch (e) {
+                        throw new Error('Invalid JSON format in Response Schema');
+                    }
+                }
+
+                const formData = {
+                    goal: form.goal.value.trim(),
+                    secrets: secrets,  // Now sending as string
+                    response_schema: responseSchema
+                };
+
+                console.log('Sending form data:', JSON.stringify(formData, null, 2));
+
                 const response = await fetch('/run', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        goal: form.goal.value,
-                        secrets: form.secrets.value,
-                        responseSchema: form.responseSchema.value,
-                    }),
+                    body: JSON.stringify(formData),
                 });
 
                 const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to start task');
+                }
                 sessionId = data.session_id;  // Store the session ID
 
                 // Start status stream
@@ -708,12 +795,36 @@
 
             } catch (error) {
                 console.error('Error:', error);
+                let errorMessage;
+                if (error.name === 'SyntaxError') {
+                    errorMessage = 'Invalid JSON format. Please check Response Schema and Authentication Details format.';
+                    // Try to identify which field has the error
+                    try {
+                        if (form.secrets.value.trim()) JSON.parse(form.secrets.value);
+                    } catch (e) {
+                        errorMessage = 'Invalid JSON format in Authentication Details';
+                    }
+                    try {
+                        if (form.responseSchema.value.trim()) JSON.parse(form.responseSchema.value);
+                    } catch (e) {
+                        errorMessage = 'Invalid JSON format in Response Schema';
+                    }
+                } else {
+                    errorMessage = error.message;
+                }
+                
                 statusLog.innerHTML += `
                     <div class="status-entry error">
                         <span class="status-tag">Error</span>
-                        <span class="status-details">${error.message}</span>
+                        <span class="status-details">${errorMessage}</span>
                     </div>
                 `;
+                
+                // Reset the form to allow trying again
+                const statusButton = document.getElementById('statusButton');
+                statusButton.className = 'new-task-button';
+                statusButton.innerHTML = '<i class="ri-add-circle-line"></i>New Task';
+                statusButton.onclick = startNewTask;
             }
         });
 
@@ -725,6 +836,8 @@
             const form = document.getElementById('agentForm');
             if (form) {
                 form.reset();
+                // Set default response schema
+                form.responseSchema.value = '{"type": "object","properties": {"success": {"type": "boolean"},"result": {"type": "string"}},"required": ["success", "result"]}';
             }
 
             // Hide the main container and show the centered content
