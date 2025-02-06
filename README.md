@@ -185,8 +185,8 @@ API documentation available at `http://localhost:8000/docs`
 Launch the proof-of-concept web UI:
 
 ```shell
-uv run examples/web/app.py
-# Access at http://localhost:8001
+uv run examples/rest/app.py
+# Access at http://localhost:8000
 ```
 
 #### Command Line Interface
