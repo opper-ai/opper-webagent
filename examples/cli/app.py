@@ -141,7 +141,7 @@ async def main():
 
     try:
 
-        def status_callback(action, details):
+        def status_callback(action, details, screenshot=None):
             status_entry = create_status_entry(action, details)
             if status_entry:
                 console.print(status_entry)
@@ -158,12 +158,14 @@ async def main():
         )
 
         if Confirm.ask("\n[cyan]Proceed with the task?[/cyan]", default=True):
-            agent = WebAgent(status_callback=status_callback)
+            agent = WebAgent()
+            print("test")
             try:
                 result = await agent.run(
                     task,
                     headless=headless,
                     response_schema=response_schema,
+                    status_callback=status_callback
                 )
             except KeyboardInterrupt:
                 console.print("[yellow]Task cancelled by user[/yellow]")
