@@ -55,7 +55,7 @@ pip install -r requirements.txt
 The web agent can be used directly in your Python code:
 
 ```python
-from web_agent import run
+from opper.web_agent import run
 
 # Define a callback for monitoring progress
 def print_status(action, details):

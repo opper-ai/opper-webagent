@@ -1,4 +1,8 @@
+# Use Python 3.12 as base image
 FROM python:3.12-slim
+
+# Set working directory
+WORKDIR /app
 
 # Install system dependencies for Chrome/Chromium
 RUN apt-get update && apt-get install -y \
@@ -6,36 +10,28 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     chromium \
     chromium-driver \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Set up working directory
-WORKDIR /app
-
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-RUN playwright install
-
-COPY examples/rest/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the application code
-COPY src/ src/
-COPY examples/ examples/
+# Copy package files
 COPY setup.py .
+COPY README.md .
+COPY opper/ opper/
+COPY requirements.txt .
+COPY examples/ examples/
 
-RUN pip install --no-cache-dir .
+# Install package and requirements
+RUN pip install -e .
+RUN pip install -r examples/rest/requirements.txt
+
+# Install playwright
+RUN playwright install
 
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV CHROME_PATH=/usr/bin/chromium
 ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
 ENV PYTHONUNBUFFERED=1
-
-# Define OPPER_API_KEY as a build argument and environment variable
-ARG OPPER_API_KEY
-ENV OPPER_API_KEY=${OPPER_API_KEY}
 
 # Expose the port the app runs on
 EXPOSE 8000

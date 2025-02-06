@@ -14,7 +14,7 @@ curl http://localhost:10000/jobs
 """
 
 from flask import Flask, request, jsonify, render_template, send_from_directory
-from src.web_agent.main import navigate_with_ai
+from src.webagent.main import navigate_with_ai
 from multiprocessing import Process, Queue, current_process
 from flask_cors import CORS
 import time

@@ -1,0 +1,12 @@
+services:
+  opperator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - OPPER_API_KEY=${OPPER_API_KEY}
+    volumes:
+      - .:/app
+    command: uvicorn examples.rest.app:app --host 0.0.0.0 --port 8000 
