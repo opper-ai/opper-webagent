@@ -1,0 +1,18 @@
+name: Trigger Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  trigger-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger build workflow in build repository
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PRIVATE_REPO_PAT }}
+          repository: opper-ai/opper-webagent-build
+          event-type: trigger-build
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
