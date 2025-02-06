@@ -15,7 +15,6 @@ from .models.schemas import (
     RelevantInteraction,
     ScreenOutput,
 )
-from .web_agent import WebAgent
 
 __all__ = [
     "Action",
