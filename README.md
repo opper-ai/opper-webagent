@@ -210,3 +210,4 @@ For major changes, open an issue first to discuss your proposed modifications.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
