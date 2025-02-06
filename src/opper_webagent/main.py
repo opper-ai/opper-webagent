@@ -117,6 +117,10 @@ class WebAgent:
 
             # Take action on actions
             if action.action == "navigate":
+                
+                self._status_manager.update(
+                    "navigating", f"Going to {action.param}", screenshot_path
+                )
                 result = await navigate_to_url(page, action.param)
                 await asyncio.sleep(1)
                 trajectory.append(
@@ -127,9 +131,7 @@ class WebAgent:
                         "result": result.output if result.success else result.error,
                     }
                 )
-                self._status_manager.update(
-                    "navigating", f"Going to {action.param}", screenshot_path
-                )
+                
 
             elif action.action == "look":
                 self._status_manager.update(

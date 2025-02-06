@@ -1,6 +1,11 @@
-# Opperator - A Scriptable Compound AI Web Agent
+# A Scriptable Compound AI Web Agent
 
-🌐 Opperator is a powerful autonomous web agent designed to automate complex web tasks through natural language instructions. Built as a proof of concept, it demonstrates a new paradigm in AI-driven web automation.
+🌐 This is a scriptable compound AI web agent designed to automate complex web tasks through natural language instructions. Built to run autonomously in the background and be interfacaed with through code.
+
+## Demo Video
+
+[![Opperator Demo](https://img.youtube.com/vi/5VwdPfoCpeU/0.jpg)](https://www.youtube.com/watch?v=5VwdPfoCpeU)
+
 
 ## Key Features
 
