@@ -1,0 +1,6 @@
+.venv/
+.git/
+.gitignore
+.dockerignore
+.github/
+.github/workflows/
