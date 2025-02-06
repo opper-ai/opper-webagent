@@ -20,7 +20,7 @@ sys.path.append(str(root_dir / "src"))
 from opper_webagent import WebAgent
 
 app = FastAPI()
-templates = Jinja2Templates(directory="examples/web_interface/templates")
+templates = Jinja2Templates(directory="examples/web/templates")
 
 # Global state for status updates
 status_queues = {}
