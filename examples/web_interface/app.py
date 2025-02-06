@@ -16,9 +16,8 @@ root_dir = Path(__file__).parent.parent.parent
 import sys
 
 sys.path.append(str(root_dir))
-sys.path.append(str(root_dir / "src"))
 
-from build.lib.web_agent.main import WebAgent
+from web_agent.main import WebAgent
 
 app = FastAPI()
 templates = Jinja2Templates(directory="examples/web_interface/templates")
@@ -154,4 +153,4 @@ async def stop_task(session_id: str):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0")
+    uvicorn.run(app, host="0.0.0.0", port=8001)
