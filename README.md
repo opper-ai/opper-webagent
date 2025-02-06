@@ -12,11 +12,11 @@
 
 ## Technical Architecture
 
-Opperator leverages multiple specialized AI models via the Opper AI platform:
+Opperator leverages multiple AI models via the Opper AI platform to perform the different tasks:
 
 - 🔍 **Molmo**: An open-source model for visual analysis and web element detection
-- 🤔 **Deepseek V3**: A LLM optimized for strategic reasoning and planning
-- 🎯 **Mistral Large**: A LLM focused on action determination and execution
+- 🤔 **Sonnet-3.5**: For strategic reflection and decision making
+- 🎯 **Flash-1.5**: For fast content extraction and structured output
 
 ### System Flow
 
