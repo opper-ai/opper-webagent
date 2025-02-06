@@ -1,0 +1,11 @@
+services:
+  opperator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      - OPPER_API_KEY=${OPPER_API_KEY}
+    volumes:
+      - .:/app
