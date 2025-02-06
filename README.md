@@ -1,24 +1,24 @@
-# Opperator - A scriptable compound AI web agent
+# Opperator - A Scriptable Compound AI Web Agent
 
-🌐 We built Opperator as a proof of concept for a new class of AI agents that can run headlessly and autonomously, focusing on automating tasks on the web.
+🌐 Opperator is a powerful autonomous web agent designed to automate complex web tasks through natural language instructions. Built as a proof of concept, it demonstrates a new paradigm in AI-driven web automation.
 
-## What Makes It Special
+## Key Features
 
-- 🎯 **Specify web task in natural language**: Simply tell it what you want - no complex configuration needed
-- 🤖 **Have it run headlessly in the background**: Run silently in the background or watch the magic happen in real-time
-- 📊 **Built to be operated from code**: Get results in precisely formatted JSON that that you can work with in code
-- 🔄 **Get feedback on agent progress**: Specify a callback to monitor every step of the agents progress to build powerful interfaces.
-- 🔐 **Pass authentication details**: Safely pass login credentials and sensitive data
+- 🎯 **Natural Language Task Definition**: Define web tasks using plain English - no configuration required
+- 🤖 **Headless Operation**: Run silently in the background or monitor real-time execution
+- 📊 **Programmatic Integration**: Receive structured JSON output for seamless integration with your codebase
+- 🔄 **Progress Monitoring**: Track agent progress through customizable callbacks
+- 🔐 **Secure Authentication**: Safely handle credentials and sensitive data
 
-## Under the Hood
+## Technical Architecture
 
-The agent is a compound AI agent in that it utilizes differnt models for different parts of its subtasks. It accesses these models via the Opper AI platform: 
+Opperator leverages multiple specialized AI models via the Opper AI platform:
 
-- 🔍 **Molmo**: An open source model specialized for visual analysis and web element detection
-- 🤔 **Deepseek V3**: A large language model specialized for strategic reasoning and planning
-- 🎯 **Mistral Large**: A large language model specialized for action determination and execution
+- 🔍 **Molmo**: An open-source model for visual analysis and web element detection
+- 🤔 **Deepseek V3**: A LLM optimized for strategic reasoning and planning
+- 🎯 **Mistral Large**: A LLM focused on action determination and execution
 
-Here is a high level overview of the agent's flow:
+### System Flow
 
 ```sh
                   ┌─────────────┐
@@ -54,68 +54,65 @@ Here is a high level overview of the agent's flow:
 
 ```
 
+### Supported Actions
 
+The agent autonomously executes tasks using the following actions:
 
-### Available Actions
+| Action                  | Description                                    |
+|------------------------|------------------------------------------------|
+| `navigate`             | Visit specified URLs                           |
+| `look`                 | Analyze page content and structure             |
+| `click`                | Interact with page elements                    |
+| `type`                 | Input text and fill forms                      |
+| `scroll_down`/`scroll_up` | Navigate page content vertically            |
+| `wait`                 | Handle dynamic loading and state changes       |
+| `finished`             | Complete task and return structured output     |
 
-The agent will autonomously reason its way through the task and may perform the following actions:
+## Getting Started
 
-| Action                  | Description                      |
-|-------------------------|----------------------------------|
-| `navigate`              | Visit any URL                    |
-| `look`                  | Analyze page content             |
-| `click`                 | Interact with elements           |
-| `type`                  | Fill out forms                   |
-| `scroll_down`/`scroll_up` | Navigate pages                 |
-| `wait`                  | Handle loading states            |
-| `finished`              | Complete with structured output  |
+### Prerequisites
 
-## Installation
+1. Sign up at [opper.ai](https://opper.ai/) to obtain an API key
+2. The free tier includes $10 monthly credit for inference and tracing
 
-First sign up to Opper at [opper.ai](https://opper.ai/) and create an API key to access models, tracing and more. **The Opper free tier allows for $10 of free credits per month for inference and tracing.** 
+### Environment Setup
 
-Export the API key as an environment variable:
+Set your API key:
 
 ```shell
 export OPPER_API_KEY=op-<your-api-key>
 ```
 
-Then install the package using uv:
+### Installation
+
+Install using [uv](https://github.com/astral-sh/uv):
 
 ```shell
-# Install uv if you haven't already
+# Install uv (if needed)
+# For Unix-like systems:
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# On MacOS
+# For MacOS:
 brew install uv
-```
 
-```shell
-# Create virtual environment and install dependencies
+# Install dependencies
 uv sync --frozen
 ```
 
-## Use as a library
+## Usage Examples
 
-The web agent can be used directly in your Python code:
+### Python Library Integration
 
 ```python
 from opper_webagent import run
 
-# Define a callback for monitoring progress
 def print_status(action, details):
     print(f"{action}: {details}")
 
-# Example: Scrape product information with authentication
+# Example: Verify blog post existence
 result = run(
-
-    # Describe your goal in natural language
     goal="Go to https://opper.ai and verify that there is a blog post covering DeepSeek-R1 there",
-    
-    # Provide credentials if needed
-    secrets=None,
-    
-    # Define response schema using JSON Schema specification (see https://json-schema.org)
+    secrets=None,  # Optional: Add authentication credentials
     response_schema={
         "type": "object",
         "properties": {
@@ -123,16 +120,13 @@ result = run(
             "post_title": {"type": "string"}
         }
     },
-    
-    # Optionally provide a callback to monitor the agent's progress
-    status_callback=print_status
+    status_callback=print_status  # Optional: Monitor progress
 )
 
-# Access the results
 print(result["result"])
 ```
 
-Running this will yield something like the following where it continously print status updates until the goal is reached:
+Example output:
 
 ```shell
 starting: Go to https://opper.ai and verify that there is a blog post covering DeepSeek-R1 there
@@ -153,18 +147,18 @@ cleanup: Done with task, closing browser
 }
 ```
 
-## Use Docker container
+### Docker Deployment
 
-Run the docker image:
+1. Start the REST API server:
 
 ```shell
 docker compose up --build
 ```
 
-By default, this will start a REST API server on port 8000. You can interact with it using HTTP requests:
+2. Interact via HTTP requests:
 
 ```shell
-# Example: Run a web agent task
+# Execute a web task
 curl -X POST http://localhost:8000/run \
   -H "Content-Type: application/json" \
   -d '{
@@ -177,36 +171,25 @@ curl -X POST http://localhost:8000/run \
       }
     }
   }'
-```
 
-You can also stream status updates using:
-
-```shell
+# Stream status updates
 curl -N http://localhost:8000/status-stream/<session_id>
 ```
 
-This will stream real-time updates in Server-Sent Events (SSE) format:
+### Alternative Interfaces
 
-```shell
-data: {"action": "initializing", "details": "starting task"}
-data: {"action": "navigating", "details": "Going to https://opper.ai"}
-...etc
-```
+#### Web Interface
 
-## Alternative Interfaces
-
-### Web Interface
-
-We also built a simple proof of concept web interface that you can use to invoke tasks with the agent:
+Launch the proof-of-concept web UI:
 
 ```shell
 uv run examples/web/app.py
-# Then open http://localhost:8001
+# Access at http://localhost:8001
 ```
 
-### Command Line
+#### Command Line Interface
 
-As with the web interface, this command line interface is a proof of concept that you can use to invoke tasks with the agent:
+Use the CLI tool:
 
 ```shell
 uv run examples/cli/app.py
@@ -214,8 +197,14 @@ uv run examples/cli/app.py
 
 ## Contributing
 
-Contributions are welcome! Please submit a pull request or open an issue to discuss your ideas.
+We welcome contributions! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request
+
+For major changes, open an issue first to discuss your proposed modifications.
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
