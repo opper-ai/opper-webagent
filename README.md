@@ -94,36 +94,6 @@ uv venv
 uv install -e .
 ```
 
-## Running Examples
-
-### REST API
-
-Start the REST API server:
-
-```bash
-uv run examples/rest/app.py
-```
-
-Then access the API at http://localhost:8000
-
-### Command Line Interface
-
-Run the CLI example:
-
-```bash
-uv run examples/cli/app.py
-```
-
-### Web Interface
-
-Start the web interface:
-
-```bash
-uv run examples/web/app.py
-```
-
-Then open http://localhost:8000 in your browser
-
 ## Use as a library
 
 The web agent can be used directly in your Python code:
