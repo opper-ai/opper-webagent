@@ -41,14 +41,50 @@ First sign up to Opper at https://opper.ai/ and create an API key to access mode
 Export the API key as an environment variable:
 
 ```bash
-export OPPER_API_KEY=<your-api-key>
+export OPPER_API_KEY=op-xx
 ```
 
-Then install the required packages:
+Then install the package using uv:
 
 ```bash
-pip install -r requirements.txt
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create virtual environment and install dependencies
+uv venv
+. .venv/bin/activate
+uv install -e .
 ```
+
+## Running Examples
+
+### REST API
+
+Start the REST API server:
+
+```bash
+uv run examples/rest/app.py
+```
+
+Then access the API at http://localhost:8000
+
+### Command Line Interface
+
+Run the CLI example:
+
+```bash
+uv run examples/cli/app.py
+```
+
+### Web Interface
+
+Start the web interface:
+
+```bash
+uv run examples/web/app.py
+```
+
+Then open http://localhost:8000 in your browser
 
 ## Use as a library
 
