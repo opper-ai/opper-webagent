@@ -598,7 +598,7 @@
                 return;
             }
 
-            eventSource = new EventSource(`/status/${sessionId}`);
+            eventSource = new EventSource(`/status-stream/${sessionId}`);
             const statusDiv = document.getElementById('status');
 
             eventSource.onmessage = function (event) {
@@ -607,7 +607,7 @@
                 // Check for task completion
                 if (status.action === 'completed' || status.action === 'error') {
                     isRunning = false;
-                    
+
                     statusDiv.appendChild(completionUpdate);
 
                     if (status.result) {
@@ -615,11 +615,11 @@
                         // Add result to status log
                         const resultUpdate = document.createElement('div');
                         resultUpdate.className = 'status-entry result';
-                        
+
                         // Format the result value based on its type
                         let formattedResult;
                         const resultValue = status.result.result;  // Extract the result key
-                        
+
                         if (typeof resultValue === 'object') {
                             formattedResult = `<pre style="margin: 0; white-space: pre-wrap;">${JSON.stringify(resultValue, null, 2)}</pre>`;
                         } else if (typeof resultValue === 'string' && resultValue.trim().startsWith('{')) {
@@ -632,13 +632,13 @@
                         } else {
                             formattedResult = resultValue;
                         }
-                        
+
                         // Format duration if available
-                        const duration = status.result.duration_seconds ? 
+                        const duration = status.result.duration_seconds ?
                             `<div style="margin-top: 8px; font-size: 0.8rem; color: #9CA3AF;">
                                 Duration: ${status.result.duration_seconds.toFixed(2)} seconds
                             </div>` : '';
-                        
+
                         resultUpdate.innerHTML = `
                             <span class="status-tag">Result</span>
                             <span class="status-details">${formattedResult}</span>
@@ -646,13 +646,13 @@
                         `;
                         statusDiv.appendChild(resultUpdate);
                     }
-                    
+
                     // Change Cancel button to "New Task"
                     const statusButton = document.getElementById('statusButton');
                     statusButton.className = 'new-task-button';
                     statusButton.innerHTML = '<i class="ri-add-circle-line"></i>New Task';
                     statusButton.onclick = startNewTask;
-                    
+
                     // Close the event source since we're done
                     if (eventSource) {
                         eventSource.close();
@@ -812,14 +812,14 @@
                 } else {
                     errorMessage = error.message;
                 }
-                
+
                 statusLog.innerHTML += `
                     <div class="status-entry error">
                         <span class="status-tag">Error</span>
                         <span class="status-details">${errorMessage}</span>
                     </div>
                 `;
-                
+
                 // Reset the form to allow trying again
                 const statusButton = document.getElementById('statusButton');
                 statusButton.className = 'new-task-button';

@@ -8,8 +8,9 @@ from pathlib import Path
 from queue import Queue
 from typing import Dict, Optional
 
-from fastapi import BackgroundTasks, FastAPI
+from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 # Add the src directory to the Python path for the examples
@@ -20,6 +21,8 @@ sys.path.append(str(root_dir / "src"))
 from opper_webagent import WebAgent
 
 app = FastAPI()
+
+templates = Jinja2Templates(directory="examples/rest/templates")
 
 # Store active sessions and their status
 status_queues: Dict[str, Queue] = {}
@@ -47,12 +50,6 @@ class RunRequest(BaseModel):
     goal: str
     secrets: Optional[str] = None
     responseSchema: Optional[dict] = None
-
-
-def stop(session_id: str = None) -> None:
-    """Stop a specific session"""
-    if session_id and session_id in status_queues:
-        status_queues.pop(session_id, None)
 
 
 def status_callback(
@@ -83,7 +80,6 @@ async def status_stream_generator(session_id: str):
         return
 
     queue = status_queues[session_id]
-
     while True:
         try:
             if not queue.empty():
@@ -94,7 +90,8 @@ async def status_stream_generator(session_id: str):
             else:
                 # Send keep-alive every second if no updates
                 await asyncio.sleep(1)
-                yield b'data: {"action": null, "details": null}\n\n'
+                yield ": keep-alive\n\n"
+                # yield b'data: {"action": null, "details": null}\n\n'
 
         except Exception as e:
             print(f"error in status stream: {str(e)}")
@@ -112,12 +109,13 @@ async def status_stream(session_id: str):
 @app.patch("/stop/{session_id}")
 async def stop_agent(session_id: str):
     """Stop an agent session"""
-    stop(session_id)
+    if session_id and session_id in status_queues:
+        status_queues.pop(session_id, None)
     return JSONResponse({"status": "stopped"})
 
 
 # Create a session-specific callback
-def session_callback(session_id: str):
+def _get_session_callback(session_id: str):
     def callback(action, details, screenshot_path=None):
         status_callback(action, details, screenshot_path, session_id)
 
@@ -128,7 +126,7 @@ async def _run_agent(session_id: str, request: RunRequest):
     """Start a new agent run"""
     schema = request.responseSchema if request.responseSchema else DEFAULT_SCHEMA
 
-    callback = session_callback(session_id)
+    callback = _get_session_callback(session_id)
     callback("initializing", "starting task")
 
     try:
@@ -186,6 +184,11 @@ async def get_agent_info():
             "status": {"active_sessions": len(status_queues), "available": True},
         }
     )
+
+
+@app.get("/")
+async def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 if __name__ == "__main__":
