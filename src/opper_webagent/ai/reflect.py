@@ -22,7 +22,7 @@ def reflect_on_progress(goal, current_url, trajectory):
             "goal": goal,
             "trajectory": trajectory[-10:],
         },
-        model="fireworks/deepseek-v3",
+        model="anthropic/claude-3.5-sonnet-20241022",
         output_type=Reflection,
         configuration=CallConfiguration(evaluation={"enabled": False}),
     )
