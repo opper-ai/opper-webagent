@@ -199,10 +199,10 @@ data: {"action": "navigating", "details": "Going to https://opper.ai"}
 We also built a simple proof of concept web interface that you can use to invoke tasks with the agent:
 
 ```bash
-pip install -r examples/web_interface/requirements.txt
+pip install -r examples/web/requirements.txt
 
-python examples/web_interface/app.py
-# Then open http://localhost:8000
+python examples/web/app.py
+# Then open http://localhost:8001
 ```
 
 ### Command Line
@@ -210,9 +210,9 @@ python examples/web_interface/app.py
 As with the web interface, this command line interface is a proof of concept that you can use to invoke tasks with the agent:
 
 ```bash
-pip install -r examples/console_interface/requirements.txt
+pip install -r examples/cli/requirements.txt
 
-python examples/console_interface/app.py
+python examples/cli/app.py
 ```
 
 ## Contributing
