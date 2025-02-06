@@ -2,6 +2,7 @@ import asyncio
 import base64
 import json
 import os
+import sys
 import uuid
 from pathlib import Path
 from queue import Queue
@@ -11,13 +12,12 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-# Add the src directory to the Python path
+# Add the src directory to the Python path for the examples
 root_dir = Path(__file__).parent.parent.parent
-import sys
-
 sys.path.append(str(root_dir))
+sys.path.append(str(root_dir / "src"))
 
-from web_agent.main import WebAgent
+from opper_webagent import WebAgent
 
 app = FastAPI()
 templates = Jinja2Templates(directory="examples/web_interface/templates")

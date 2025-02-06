@@ -11,27 +11,31 @@ RUN apt-get update && apt-get install -y \
     chromium \
     chromium-driver \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
 # Copy package files
-COPY setup.py .
+COPY pyproject.toml .
 COPY README.md .
-COPY opper/ opper/
-COPY requirements.txt .
+COPY src/ src/
 COPY examples/ examples/
 
-# Install package and requirements
-RUN pip install -e .
-RUN pip install -r examples/rest/requirements.txt
+# Create venv and install package
+RUN uv venv
+RUN . .venv/bin/activate && uv install -e .
 
 # Install playwright
-RUN playwright install
+RUN . .venv/bin/activate && playwright install
 
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV CHROME_PATH=/usr/bin/chromium
 ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
 ENV PYTHONUNBUFFERED=1
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Expose the port the app runs on
 EXPOSE 8000

@@ -9,12 +9,12 @@ from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
-# Add the src directory to the Python path
+# Add the src directory to the Python path for the examples
 root_dir = Path(__file__).parent.parent.parent
 sys.path.append(str(root_dir))
 sys.path.append(str(root_dir / "src"))
 
-from web_agent import WebAgent
+from opper_webagent import WebAgent
 
 console = Console()
 

@@ -12,12 +12,12 @@ from fastapi import BackgroundTasks, FastAPI
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
-from web_agent import WebAgent
-
-# Add the src directory to the Python path
+# Add the src directory to the Python path for the examples
 root_dir = Path(__file__).parent.parent.parent
 sys.path.append(str(root_dir))
 sys.path.append(str(root_dir / "src"))
+
+from opper_webagent import WebAgent
 
 app = FastAPI()
 
