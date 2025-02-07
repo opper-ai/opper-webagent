@@ -80,7 +80,22 @@ The agent autonomously executes tasks using the following actions:
 1. Sign up at [opper.ai](https://opper.ai/) to obtain an API key
 2. The free tier includes $10 monthly credit for inference and tracing
 
-### Environment Setup
+### Option 1: Using Docker (Quickstart)
+
+Run the web agent using Docker:
+
+```shell
+docker run --rm -ti \
+  -e OPPER_API_KEY=op-<your-api-key> \
+  -p 8000:8000 \
+  ghcr.io/opper-ai/opper-webagent:latest
+```
+
+Then browse to `http://localhost:8000/` to start using the web agent.
+
+### Option 2: Local Installation
+
+#### Environment Setup
 
 Set your API key:
 
@@ -88,7 +103,7 @@ Set your API key:
 export OPPER_API_KEY=op-<your-api-key>
 ```
 
-### Installation
+#### Installation
 
 Install using [uv](https://github.com/astral-sh/uv):
 
@@ -152,36 +167,15 @@ cleanup: Done with task, closing browser
 }
 ```
 
-### Docker Deployment
+### Alternative Deployment Methods
 
-1. Start the REST API server:
+#### Using Docker Compose
+
+If you prefer using Docker Compose:
 
 ```shell
 docker compose up --build
 ```
-
-2. Interact via HTTP requests:
-
-```shell
-# Execute a web task (returns session id)
-curl -X POST http://localhost:8000/run \
-  -H "Content-Type: application/json" \
-  -d '{
-    "goal": "Go to https://opper.ai and check the pricing",
-    "response_schema": {
-      "type": "object",
-      "properties": {
-        "has_free_tier": {"type": "boolean"},
-        "pricing_details": {"type": "string"}
-      }
-    }
-  }'
-
-# Stream status updates
-curl -N http://localhost:8000/status-stream/<session_id>
-```
-
-API documentation available at `http://localhost:8000/docs`
 
 ### Alternative Interfaces
 
