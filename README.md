@@ -100,8 +100,29 @@ docker run --rm -ti \
   ghcr.io/opper-ai/opper-webagent:latest
 ```
 
-Then browse to `http://localhost:8000/` to start using the web agent.
+Then browse to `http://localhost:8000/` to use the web interface.
 
+To interact with it over REST: 
+
+```
+# Execute a web task (returns session id)
+curl -X POST http://localhost:8000/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "goal": "Go to https://opper.ai and check the pricing",
+    "response_schema": {
+      "type": "object",
+      "properties": {
+        "has_free_tier": {"type": "boolean"},
+        "pricing_details": {"type": "string"}
+      },
+      "required": ["has_free_tier", "pricing_details"]
+    }
+  }'
+
+# Stream status updates
+curl -N http://localhost:8000/status-stream/<session_id>
+```
 ### Option 2: Local Installation
 
 #### Environment Setup
