@@ -1,6 +1,6 @@
-# A Scriptable Compound AI Web Agent
+# Opperator - A Scriptable Compound AI Web Agent
 
-🌐 This is a scriptable compound AI web agent designed to automate complex web tasks through natural language instructions. Built to run autonomously in the background and be interfacaed with through code.
+🌐 This is a scriptable compound AI web agent designed to automate complex web tasks through natural language instructions. Built to run autonomously in the background and be interfaced with through code.
 
 ## Demo Video
 
@@ -71,6 +71,16 @@ The agent autonomously executes tasks using the following actions:
 | `scroll_down`/`scroll_up` | Navigate page content vertically            |
 | `wait`                 | Handle dynamic loading and state changes       |
 | `finished`             | Complete task and return structured output     |
+
+### Status Messages
+
+The agent provides status updates through callback functions during task execution. Each status message contains:
+
+| Field      | Description                                           |
+|------------|-------------------------------------------------------|
+| `action`   | The current action being performed (e.g. `navigate`, `click`) |
+| `details`  | Additional context about the action and its outcome    |
+| `screenshot`| Path to temporary image file                         |
 
 ## Getting Started
 
