@@ -31,8 +31,10 @@ class WebAgent:
     def __init__(
         self,
         status_callback: Optional[Callable[[str, str], None]] = None,
+        max_iterations: Optional[int] = None,
     ):
         self.status_callback = status_callback
+        self.max_iterations = max_iterations or int(os.getenv("WEBAGENT_MAX_ITERATIONS", "100"))
 
         self._stop_event = Event()
         self._stop_event.clear()
@@ -277,13 +279,25 @@ class WebAgent:
         response_schema: Optional[Dict] = None,
         status_callback: Optional[Callable[[str, str], None]] = None,
         session_id: Optional[str] = None,
+        max_iterations: Optional[int] = None,
     ) -> Dict:
-        """Execute an AI-guided web navigation session."""
+        """Execute an AI-guided web navigation session.
+
+        Args:
+            goal: The goal to accomplish
+            secrets: Optional secrets/credentials needed for the task
+            headless: Whether to run the browser in headless mode
+            response_schema: Optional schema for structuring the response
+            status_callback: Optional callback for status updates
+            session_id: Optional session identifier
+            max_iterations: Optional maximum number of iterations (overrides class-level setting)
+        """
 
         if not session_id:
             session_id = str(uuid.uuid4())
 
-        # Start playwright
+        # Use run-specific max_iterations if provided, otherwise use class-level setting
+        iterations_limit = max_iterations if max_iterations is not None else self.max_iterations
 
         start_time = time.time()
         self._stop_event.clear()
@@ -312,10 +326,18 @@ class WebAgent:
 
             # Execute navigation loop
             try:
+                iteration_count = 0
                 while not self._stop_event.is_set():
+                    if iteration_count >= iterations_limit:
+                        completed_result = "Navigation stopped: reached maximum iterations"
+                        trajectory.append({"action": "stopped", "result": completed_result})
+                        break
+
                     status, result = await self.attempt(
                         page, browser, goal, None, trajectory, response_schema
                     )
+                    iteration_count += 1
+                    
                     if status in ["finished", "break"]:
                         completed_result = result
                         break
