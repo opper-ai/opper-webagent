@@ -31,8 +31,10 @@ class WebAgent:
     def __init__(
         self,
         status_callback: Optional[Callable[[str, str], None]] = None,
+        max_iterations: Optional[int] = None,
     ):
         self.status_callback = status_callback
+        self.max_iterations = max_iterations or int(os.getenv("WEBAGENT_MAX_ITERATIONS", "100"))
 
         self._stop_event = Event()
         self._stop_event.clear()
@@ -312,10 +314,18 @@ class WebAgent:
 
             # Execute navigation loop
             try:
+                iteration_count = 0
                 while not self._stop_event.is_set():
+                    if iteration_count >= self.max_iterations:
+                        completed_result = "Navigation stopped: reached maximum iterations"
+                        trajectory.append({"action": "stopped", "result": completed_result})
+                        break
+
                     status, result = await self.attempt(
                         page, browser, goal, None, trajectory, response_schema
                     )
+                    iteration_count += 1
+                    
                     if status in ["finished", "break"]:
                         completed_result = result
                         break
