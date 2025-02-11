@@ -50,6 +50,7 @@ class RunRequest(BaseModel):
     goal: str
     secrets: Optional[str] = None
     responseSchema: Optional[dict] = None
+    max_iterations: Optional[int] = None
 
 
 def status_callback(
@@ -129,7 +130,7 @@ async def _run_agent(session_id: str, request: RunRequest):
     callback = _get_session_callback(session_id)
 
     try:
-        result = await WebAgent().run(
+        result = await WebAgent(max_iterations=request.max_iterations).run(
             goal=request.goal,
             secrets=request.secrets,
             response_schema=schema,

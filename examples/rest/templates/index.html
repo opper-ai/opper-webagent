@@ -530,6 +530,11 @@
                                 placeholder="Optional: Enter login credentials if needed for the task"></textarea>
                         </div>
                         <div class="form-group">
+                            <label for="maxIterations">Maximum Iterations</label>
+                            <input type="number" id="maxIterations" name="maxIterations" min="1" 
+                                placeholder="Default: 100" style="width: 150px; padding: 12px; border: 2px solid #374151; border-radius: 12px; font-size: 1rem; background-color: #111827; color: #e5e7eb;">
+                        </div>
+                        <div class="form-group">
                             <label for="responseSchema">Custom Response Schema</label>
                             <textarea id="responseSchema" name="responseSchema" rows="4"
                                 placeholder="Optional: Specify a JSON schema for structured output">{
@@ -778,6 +783,12 @@
                     secrets: secrets,  // Now sending as string
                     response_schema: responseSchema
                 };
+
+                // Add max_iterations if specified
+                const maxIterations = form.maxIterations.value.trim();
+                if (maxIterations) {
+                    formData.max_iterations = parseInt(maxIterations, 10);
+                }
 
                 console.log('Sending form data:', JSON.stringify(formData, null, 2));
 
