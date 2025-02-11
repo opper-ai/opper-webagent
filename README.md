@@ -1,10 +1,12 @@
-# Opperator - A Scriptable Compound AI Web Agent
+# Opperator - A Composable, Autonomous Compound AI Web Agent
 
 🌐 This is a scriptable compound AI web agent designed to automate complex web tasks through natural language instructions. Built to run autonomously in the background and be interfaced with through code.
 
 ## Demo Video
 
-[![Opperator Demo](https://img.youtube.com/vi/ZsEW3BjwyOk/0.jpg)](https://www.youtube.com/watch?v=ZsEW3BjwyOk)
+[![Demo Video](https://img.youtube.com/vi/byIM6NyEJT0/0.jpg)](https://youtu.be/byIM6NyEJT0)
+
+The console based multi task interface is available as an example interface in the `examples/multi` folder. See below for instructions.
 
 ## Key Features
 
@@ -149,7 +151,15 @@ brew install uv
 uv sync --frozen
 ```
 
-## Usage Examples
+## Example Interfaces
+
+### Asynchronous Multi-Task Example (from Demo)
+
+Run the multi-task example:
+
+```shell
+uv run examples/multi/app.py
+```
 
 ### Python Library Integration
 
@@ -197,19 +207,7 @@ cleanup: Done with task, closing browser
 }
 ```
 
-### Alternative Deployment Methods
-
-#### Using Docker Compose
-
-If you prefer using Docker Compose:
-
-```shell
-docker compose up --build
-```
-
-### Alternative Interfaces
-
-#### Web Interface
+### Web Interface
 
 Launch the proof-of-concept web UI:
 
@@ -218,12 +216,22 @@ uv run examples/rest/app.py
 # Access at http://localhost:8000
 ```
 
-#### Command Line Interface
+### Command Line Interface
 
 Use the CLI tool:
 
 ```shell
 uv run examples/cli/app.py
+```
+
+### Alternative Deployment Methods
+
+#### Using Docker Compose
+
+If you prefer using Docker Compose:
+
+```shell
+docker compose up --build
 ```
 
 ## Contributing

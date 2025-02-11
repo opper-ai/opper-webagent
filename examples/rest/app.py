@@ -194,4 +194,4 @@ async def index(request: Request):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app:app", workers=4)
+    uvicorn.run("app:app", workers=5)
