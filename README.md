@@ -6,7 +6,7 @@ The agent is primarily designed to be used as a library or interacted with throu
 
 ## Demo Video
 
-[![Demo Video](https://img.youtube.com/vi/byIM6NyEJT0/0.jpg)](https://youtu.be/byIM6NyEJT0)
+[![Demo Video](https://img.youtube.com/vi/-0Tl9f3xtqI/0.jpg)](https://youtu.be/-0Tl9f3xtqI)
 
 The console based multi task interface is available as an example interface in the `examples/multi` folder. See below for instructions.
 
