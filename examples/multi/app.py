@@ -19,69 +19,9 @@ TASKS = [
         "goal": "Check that a login page is present on the URL https://platform.opper.ai."
     },
     {
-        "id": "unite_ai_conferences",
-        "goal": "Identify the next 3 conferences listed on https://www.unite.ai/conferences/ and extract their names and dates."
+        "id": "hackernews_top_3",
+        "goal": "List the top 3 posts on hackernews"
     },
-    {
-        "id": "verify_ad",
-        "goal": "Verify that our ad for Opper.ai is present when searching for AI proxy on Bing"
-    },
-    {
-        "id": "huggingface_models",
-        "goal": "Visit huggingface.co and extract the names and download counts of the 5 most popular AI models."
-    },
-    {
-        "id": "government_funding",
-        "goal": "Identify funding opportunities for artificial intelligence on https://www.vinnova.se/en/apply-for-funding/find-the-right-funding/ ."
-    }, 
-    {
-        "id": "paperswithcode_sota",
-        "goal": "Summarize the trending research listed on paperswithcode.com."
-    },
-    {
-        "id": "github_trending_ai",
-        "goal": "Visit GitHub's trending page and find the top 3 AI/ML repositories of today. Extract their names, descriptions, and star counts."
-    },
-     {
-        "id": "chatgpt_trending",
-        "goal": "Identify if the trend for searches on 'chatgpt' over the last 12 months is increasing or decreasing."
-    },
-    {
-        "id": "post_tweet",
-        "goal": "Post a riddle on x.com and ask people to solve it."
-    },
-    {
-        "id": "like_linkedin_post",
-        "goal": "Like the top 3 most recent posts on LinkedIn in the 'Artificial Intelligence' category."
-    },
-    {
-        "id": "linkedin_ai_jobs",
-        "goal": "Go to LinkedIn's job search, look for 'AI Engineer' positions in San Francisco, and extract the top 5 job titles and companies."
-    },
-    {
-        "id": "medium_ai_articles",
-        "goal": "Visit Medium.com and extract the titles and authors of the 5 most recent featured articles about artificial intelligence."
-    },
-    {
-        "id": "youtube_ai_lectures",
-        "goal": "Go to YouTube and find the top 3 most viewed AI lecture videos from major universities this year. Extract titles and view counts."
-    },
-    {
-        "id": "kaggle_competitions",
-        "goal": "Visit Kaggle.com and extract the details of all active AI/ML competitions, including prize amounts and deadlines."
-    },
-    {
-        "id": "reddit_ai_posts",
-        "goal": "Go to reddit.com/r/artificial and extract the top 5 most upvoted posts of the week, including titles and upvote counts."
-    },
-    {
-        "id": "ai_conference_dates",
-        "goal": "Visit the AAAI conference website and extract the important dates and deadlines for the next conference."
-    },
-    {
-        "id": "paperswithcode_sota",
-        "goal": "Go to paperswithcode.com and extract the current state-of-the-art results for image classification on ImageNet."
-    }
 ]
 
 # We define a structured completion schema for the tasks so that we can interpret the result in code
