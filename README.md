@@ -102,9 +102,9 @@ docker run --rm -ti \
   ghcr.io/opper-ai/opper-webagent:latest
 ```
 
-Then browse to `http://localhost:8000/` to use the web interface.
+To issue tasks you can browse to `http://localhost:8000/` to use the web interface.
 
-To interact with it over REST: 
+Or interact with it over REST (API docs at http://127.0.0.1:8000/docs#/)
 
 ```
 # Execute a web task (returns session id)
@@ -125,6 +125,7 @@ curl -X POST http://localhost:8000/run \
 # Stream status updates
 curl -N http://localhost:8000/status-stream/<session_id>
 ```
+
 ### Option 2: Local Installation
 
 #### Environment Setup
