@@ -337,9 +337,9 @@ class WebAgent:
                             trajectory.append({"action": "stopped", "result": completed_result})
                             break
 
-                            status, result = await self.attempt(
-                                page, browser, goal, None, trajectory, response_schema
-                            )
+                        status, result = await self.attempt(
+                            page, browser, goal, None, trajectory, response_schema
+                        )
                         iteration_count += 1
                     
                         if status in ["finished", "break"]:
