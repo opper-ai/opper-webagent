@@ -37,3 +37,4 @@ ENV/
 *.png
 *.jpg
 temp/ 
+automation_results.json
