@@ -6,7 +6,7 @@ import uuid
 from threading import Event
 from typing import Callable, Dict, List, Optional
 
-from opperai import trace
+from opperai import trace, Opper
 from playwright.async_api import async_playwright
 
 from .ai.decide import decide_next_action
@@ -23,9 +23,11 @@ from .browser.setup import setup_browser
 from .browser.type import type_text
 from .models import ActionResult
 from .status import StatusManager
+from src.opper_webagent import status
 
 __all__ = ["WebAgent"]
 
+opper = Opper()
 
 class WebAgent:
     def __init__(
@@ -270,7 +272,6 @@ class WebAgent:
                 pass
         self._screenshot_files.clear()
 
-    @trace(name="run")
     async def run(
         self,
         goal: str,
@@ -313,53 +314,59 @@ class WebAgent:
         trajectory = []
         completed_result = None
 
-        # Setup browser session
-        self._status_manager.update("setup", "Initializing browser")
-        async with async_playwright() as playwright:
-            playwright, browser, page, teardown = await setup_browser(
-                playwright=playwright,
-                headless=headless,
-            )
-            trajectory.append(
-                {"action": "setup", "result": "Opened up an empty browser window"}
-            )
+        with opper.traces.start(name="run") as run_span:
+            run_span.update(input=goal)
 
-            # Execute navigation loop
-            try:
-                iteration_count = 0
-                while not self._stop_event.is_set():
-                    if iteration_count >= iterations_limit:
-                        completed_result = "Navigation stopped: reached maximum iterations"
-                        trajectory.append({"action": "stopped", "result": completed_result})
-                        break
-
-                    status, result = await self.attempt(
-                        page, browser, goal, None, trajectory, response_schema
-                    )
-                    iteration_count += 1
-                    
-                    if status in ["finished", "break"]:
-                        completed_result = result
-                        break
-
-                # Handle stopped state
-                if self._stop_event.is_set():
-                    completed_result = "Navigation stopped by user"
-                    trajectory.append({"action": "stopped", "result": completed_result})
-
-                return {
-                    "result": completed_result,
-                    "trajectory": trajectory,
-                    "duration_seconds": time.time() - start_time,
-                }
-
-            except Exception as e:
-                self._status_manager.update("error", str(e))
-                raise
-
-            finally:
-                self._status_manager.update(
-                    "cleanup", "Done with task, closing browser"
+            # Setup browser session
+            self._status_manager.update("setup", "Initializing browser")
+            async with async_playwright() as playwright:
+                playwright, browser, page, teardown = await setup_browser(
+                    playwright=playwright,
+                    headless=headless,
                 )
-                await teardown()
-                await self._cleanup_screenshots()
+                trajectory.append(
+                    {"action": "setup", "result": "Opened up an empty browser window"}
+                )
+
+                # Execute navigation loop
+                try:
+                    iteration_count = 0
+                    while not self._stop_event.is_set():
+                        if iteration_count >= iterations_limit:
+                            completed_result = "Navigation stopped: reached maximum iterations"
+                            trajectory.append({"action": "stopped", "result": completed_result})
+                            break
+
+                        status, result = await self.attempt(
+                            page, browser, goal, None, trajectory, response_schema
+                        )
+                        iteration_count += 1
+                    
+                        if status in ["finished", "break"]:
+                            completed_result = result
+                            run_span.update(output=str(completed_result))
+                            break
+
+                    # Handle stopped state
+                    if self._stop_event.is_set():
+                        completed_result = "Navigation stopped by user"
+                        trajectory.append({"action": "stopped", "result": completed_result})
+                    
+                    return {
+                        "result": completed_result,
+                        "trajectory": trajectory,
+                        "duration_seconds": time.time() - start_time,
+                    }
+
+                except Exception as e:
+                    self._status_manager.update("error", str(e))
+                    raise
+
+                finally:
+                    self._status_manager.update(
+                        "cleanup", "Done with task, closing browser"
+                    )
+                    await teardown()
+                    await self._cleanup_screenshots()
+
+

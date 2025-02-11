@@ -9,3 +9,4 @@ services:
       - OPPER_API_KEY=${OPPER_API_KEY}
     volumes:
       - .:/app
+      - /app/.venv
