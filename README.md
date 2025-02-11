@@ -2,6 +2,8 @@
 
 🌐 This is a scriptable compound AI web agent designed to automate complex web tasks through natural language instructions. Built to run autonomously in the background and be interfaced with through code.
 
+The agent is primarily designed to be used as a library or interacted with through its provided REST API. A set of example UIs are provided in the `examples` folder.
+
 ## Demo Video
 
 [![Demo Video](https://img.youtube.com/vi/byIM6NyEJT0/0.jpg)](https://youtu.be/byIM6NyEJT0)
@@ -104,7 +106,7 @@ docker run --rm -ti \
 
 To issue tasks you can browse to `http://localhost:8000/` to use the web interface.
 
-Or interact with it over REST (API docs at http://127.0.0.1:8000/docs#/)
+You may also interact with it over REST (API docs at http://127.0.0.1:8000/docs#/)
 
 ```
 # Execute a web task (returns session id)
